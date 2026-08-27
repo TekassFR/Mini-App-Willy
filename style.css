@@ -81,6 +81,28 @@ body {
     margin-top: 10px;
 }
 
+.intro-spinner {
+    width: 42px;
+    height: 42px;
+    margin: 20px auto 0;
+    border: 3px solid rgba(139, 92, 246, 0.15);
+    border-top-color: #c084fc;
+    border-right-color: #f472b6;
+    border-radius: 50%;
+    animation: introSpin 0.75s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
+    box-shadow: 0 0 16px rgba(192, 132, 252, 0.35);
+}
+
+@keyframes introSpin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
 body.app-ready .intro-screen {
     opacity: 0;
     visibility: hidden;
