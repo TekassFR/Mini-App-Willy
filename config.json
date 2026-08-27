@@ -24,55 +24,73 @@
     "pizza": [
       {
         "id": 1,
-        "name": "ZAG FARMS LOT OF FRUITS 🇲🇦",
+        "name": "RMF Static 🇲🇦",
         "description": "Frozen Hash Premium aux notes puissantes, idéal pour les amateurs de qualité 🔥.",
         "price": 10,
         "emoji": "🍫",
-        "image": "https://i.ibb.co/vCcYJY1t/photo-5794289411116700067-y.jpg",
+        "image": "https://i.ibb.co/DDzfYtq6/photo-5798750628006793619-y.jpg",
         "category": "pizza",
         "isNew": true,
         "isPromo": false,
-        "video": "https://i.imgur.com/CeiudQC.mp4",
+        "video": "https://i.imgur.com/xA9SpaT.mp4",
         "customPrices": {
-          "5": 60.00,
-          "10": 120.00
+          "1": 10.00,
+          "2": 20.00,
+          "5": 50.00,
+          "10": 70.00,
+          "50": 270.00,
+          "100": 500.00,
+          "500": 2300.00,
+          "1000": 4300.00
         }
       },
       {
         "id": 2,
-        "name": "DIAMOND FARMS TOP DRY SIFT 🇲🇦",
+        "name": "CALI MELTS Static",
         "description": "Dry Sift Hash TOP bonne couche d'huile, top rapport qualité/prix ⚡.",
         "price": 10,
         "emoji": "🍫",
-        "image": "https://i.ibb.co/78GtQZb/photo-5794289411116700070-y.jpg",
+        "image": "https://i.ibb.co/5X490s4N/photo-5798750628006793620-y.jpg",
         "category": "pizza",
         "isNew": true,
         "isPromo": false,
-        "video": "https://i.imgur.com/Clop3GM.mp4",
+        "video": "https://i.imgur.com/Q35eV6X.mp4",
         "customPrices": {
+          "1": 10.00,
+          "2": 20.00,
           "5": 50.00,
-          "10": 90.00
+          "10": 70.00,
+          "50": 270.00,
+          "100": 500.00,
+          "500": 2300.00,
+          "1000": 4300.00
         }
       },
       {
         "id": 3,
-        "name": "DOJA FARMS STATIC PREMIUM 🇲🇦",
+        "name": "Rolls Royce Static",
         "description": "Static Premium top rapport qualité/prix attention les petits pecs sa risque de vous étonner 💎.",
         "price": 10,
         "emoji": "🍫",
-        "image": "https://i.ibb.co/Pz6bWgQQ/photo-5794289411116700071-x.jpg",
+        "image": "https://i.ibb.co/LD0Xs319/photo-5798750628006793616-y.jpg",
         "category": "pizza",
         "isNew": true,
         "isPromo": false,
-        "video": "https://i.imgur.com/hXZ0wm5.mp4",
+        "video": "https://i.imgur.com/NPetPMK.mp4",
         "customPrices": {
-          "5": 80.00,
-          "10": 160.00
+          "1": 10.00,
+          "2": 20.00,
+          "5": 50.00,
+          "10": 70.00,
+          "50": 270.00,
+          "100": 500.00,
+          "500": 2300.00,
+          "1000": 4300.00
         }
       },
       {
         "id": 4,
-        "name": "MAGIC TERPS DOUBLE STATIC 🇺🇸",
+        "name": "Frozen Plasma",
         "description": "Double Static US du réel Static Made In US, un régale un bouche, les fumeurs de Static vous savez déjà ⭐.",
         "price": 10,
         "emoji": "🍫",
@@ -80,15 +98,16 @@
         "category": "pizza",
         "isNew": true,
         "isPromo": false,
-        "video": "https://i.imgur.com/vxyoU2H.mp4",
+        "video": "https://i.imgur.com/cqUiss2.mp4",
         "customPrices": {
-          "5": 210.00,
-          "10": 400.00
+          "2": 20.00,
+          "5": 50.00,
+          "10": 80.00
         }
       },
       {
         "id": 5,
-        "name": "CALIPLATES FROZEN SIFT 2K26 🇺🇸 ♛",
+        "name": "Dry Permanent Marker",
         "description": "CALIPLATES FROZEN SIFT les vrais connaisseurs savent déjà tout, pas besoin d'en dire plus... 💥.",
         "price": 10,
         "emoji": "🍫",
@@ -96,42 +115,30 @@
         "category": "pizza",
         "isNew": true,
         "isPromo": false,
-        "video": "https://i.imgur.com/3ciIR9G.mp4",
+        "video": "https://i.imgur.com/sUvhRnT.mp4",
         "customPrices": {
-          "5": 160.00,
-          "10": 300.00
+          "1": 10.00,
+          "2": 20.00,
+          "5": 50.00,
+          "10": 80.00,
+          "50": 300.00
         }
       },
       {
         "id": 6,
-        "name": "STATIC ROOM EDITION PINK STATIC 🇺🇸",
+        "name": "Puff Runtz x Litty 🇺🇸",
         "description": "STATIC ROOM STRAINS STICKY PUNCH une explosion de saveurs en bouche un réel bonbon... petit poumon soyez pas choqués 💪.",
         "price": 10,
         "emoji": "🍫",
-        "image": "https://i.ibb.co/xtYPchW1/photo-5794289411116700109-y.jpg",
+        "image": "https://i.ibb.co/Kz3Fx8Zj/photo-5798750628006793613-y.jpg",
         "category": "pizza",
         "isNew": true,
         "isPromo": false,
         "video": "https://i.imgur.com/hzVWoKP.mp4",
         "customPrices": {
-          "5": 190.00,
-          "10": 370.00
-        }
-      },
-      {
-        "id": 7,
-        "name": "STATIC ROOM EDITION PURPLE STATIC 🇺🇸",
-        "description": "STATIC ROOM STRAINS G-LANDZ une explosion de saveurs en bouche pas pour les petits poumons 💪.",
-        "price": 10,
-        "emoji": "🍫",
-        "image": "https://i.ibb.co/xtYPchW1/photo-5794289411116700109-y.jpg",
-        "category": "pizza",
-        "isNew": true,
-        "isPromo": false,
-        "video": "https://i.imgur.com/PdNn8GH.mp4",
-        "customPrices": {
-          "5": 210.00,
-          "10": 400.00
+          "1": 80.00,
+          "2": 130.00,
+          "5": 300.00
         }
       }
     ]
