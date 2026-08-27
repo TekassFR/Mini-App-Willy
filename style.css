@@ -55,18 +55,35 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(160deg, #060501, #13102a 55%, #1a1035);
+    background:
+        radial-gradient(circle at 50% 50%, rgba(139, 92, 246, 0.28), transparent 65%),
+        linear-gradient(160deg, #060501, #13102a 55%, #1a1035);
     transition: opacity 0.45s ease, visibility 0.45s ease;
 }
 
 .intro-card {
     text-align: center;
     padding: 24px;
+    position: relative;
 }
 
 .intro-card h1 {
     font-size: clamp(2rem, 10vw, 3.8rem);
     letter-spacing: 0.08em;
+    color: #ffffff;
+    text-shadow: 0 0 20px rgba(167, 139, 250, 0.6), 0 0 45px rgba(124, 58, 237, 0.4);
+    animation: titleGlowPulse 2s ease-in-out infinite;
+}
+
+@keyframes titleGlowPulse {
+    0%, 100% {
+        transform: scale(1);
+        text-shadow: 0 0 20px rgba(167, 139, 250, 0.5), 0 0 40px rgba(124, 58, 237, 0.3);
+    }
+    50% {
+        transform: scale(1.03);
+        text-shadow: 0 0 35px rgba(192, 132, 252, 0.95), 0 0 65px rgba(167, 139, 250, 0.7);
+    }
 }
 
 .intro-kicker {
