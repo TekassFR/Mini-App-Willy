@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WILLYWONKA 54 Mini App</title>
+    <link rel="stylesheet" href="style.css?v=20260514c">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+
+<body>
+    <div id="intro-screen" class="intro-screen" aria-hidden="true">
+        <div class="intro-card">
+            <p class="intro-kicker">Bienvenue chez</p>
+            <h1>WILLYWONKA 54</h1>
+            <p class="intro-sub" id="intro-sub">Chargement de la boutique...</p>
+        </div>
+    </div>
+
+    <div class="app-shell">
+        <div class="logo-above">
+            <img class="brand-logo" src="logo.png" alt="WILLYWONKA 54 logo" loading="lazy">
+        </div>
+        <header class="app-header">
+            <div class="brand-wrap">
+                <div class="brand-row">
+                    <h1 class="brand-title">WILLYWONKA 54</h1>
+                </div>
+                <p class="brand-subtitle" id="brand-subtitle">Menu premium 2026</p>
+            </div>
+            <div class="user-chip" id="user-chip">Bienvenue</div>
+        </header>
+
+        <main class="app-main">
+            <section class="page active" id="page-home">
+                <nav class="category-tabs-container">
+                    <div class="category-tabs" id="category-tabs" role="tablist">
+                        <!-- Rempli dynamiquement par script.js -->
+                    </div>
+                </nav>
+
+                <section class="product-grid" id="product-grid" aria-live="polite"></section>
+            </section>
+
+            <section class="page" id="page-cart">
+                <div class="page-head">
+                    <h2 id="cart-title">Panier</h2>
+                    <p id="cart-desc">Finalise ta commande en quelques secondes.</p>
+                </div>
+
+                <div class="card panel" id="cart-empty-state">Panier vide.</div>
+
+                <div id="cart-content" class="stack" style="display: none;">
+                    <div class="card panel" id="cart-items"></div>
+
+                    <div class="card panel checkout-panel">
+                        <div class="service-switch" id="service-switch">
+                            <button class="service-btn active" data-service="delivery" id="service-delivery-btn"
+                                type="button">Livraison</button>
+                            <button class="service-btn" data-service="pickup" id="service-pickup-btn" type="button">Sur
+                                place</button>
+                        </div>
+
+                        <div class="field-group" id="delivery-field-group">
+                            <label for="delivery-address" id="delivery-label">Adresse de livraison</label>
+                            <textarea id="delivery-address" rows="3"
+                                placeholder="Ex: 10 rue de Paris, 54000 Nancy"></textarea>
+                        </div>
+
+                        <div class="field-group" id="pickup-field-group" style="display: none;">
+                            <label for="pickup-time" id="pickup-label">Heure d'arrivee</label>
+                            <input id="pickup-time" type="time">
+                        </div>
+
+                        <div class="checkout-row">
+                            <div>
+                                <p class="muted" id="cart-total-label">Total</p>
+                                <p class="checkout-total" id="cart-total">0.00 EUR</p>
+                            </div>
+                            <div class="checkout-actions">
+                                <button class="btn ghost" id="clear-cart-btn" type="button">Vider</button>
+                                <button class="btn primary" id="checkout-btn" type="button">Commander</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="page" id="page-history">
+                <div class="page-head">
+                    <h2 id="history-title">Historique</h2>
+                    <p id="history-desc">Retrouve toutes tes commandes.</p>
+                </div>
+                <div class="stack" id="history-list"></div>
+            </section>
+
+            <section class="page" id="page-reviews">
+                <div class="page-head">
+                    <h2 id="reviews-title">Avis</h2>
+                    <p id="reviews-desc">Ce que pensent les clients.</p>
+                </div>
+
+                <div class="review-score card panel">
+                    <p class="review-rating" id="review-rating">4.9 / 5</p>
+                    <p class="muted" id="review-count">Base sur 0 avis</p>
+                </div>
+
+                <div class="stack" id="review-list"></div>
+
+                <form class="card panel review-form" id="review-form">
+                    <h3 id="review-form-title">Laisser un avis</h3>
+                    <label for="review-author" id="review-author-label">Nom</label>
+                    <input id="review-author" type="text" maxlength="30" placeholder="Ton nom">
+
+                    <label for="review-stars" id="review-stars-label">Note (1-5)</label>
+                    <input id="review-stars" type="number" min="1" max="5" value="5">
+
+                    <label for="review-message" id="review-message-label">Message</label>
+                    <textarea id="review-message" rows="3" maxlength="160" placeholder="Ton retour"></textarea>
+
+                    <button class="btn primary" id="review-submit-btn" type="submit">Publier</button>
+                </form>
+            </section>
+
+            <section class="page" id="page-profile">
+                <div class="profile-page-wrap">
+                    <div class="profile-top-banner card panel">
+                        <div class="profile-brand-mark">WILLYWONKA 54</div>
+                    </div>
+
+                    <article class="card panel profile-identity-card">
+                        <div class="profile-avatar" id="profile-avatar">U</div>
+                        <h3 id="profile-name">Utilisateur</h3>
+                        <p class="profile-handle" id="profile-username">@username</p>
+                        <p class="profile-member-full" id="profile-member-full">Membre depuis avril 2026</p>
+                    </article>
+
+                    <div class="profile-stats-grid">
+                        <article class="card panel profile-stat-card">
+                            <p class="profile-stat-value" id="profile-order-count">0</p>
+                            <p class="profile-stat-label" id="profile-stat-orders">Commandes</p>
+                        </article>
+                        <article class="card panel profile-stat-card">
+                            <p class="profile-stat-value" id="profile-total-spent">0 EUR</p>
+                            <p class="profile-stat-label" id="profile-stat-spent">Depense</p>
+                        </article>
+                        <article class="card panel profile-stat-card">
+                            <p class="profile-stat-value" id="profile-member-short">avr. 26</p>
+                            <p class="profile-stat-label" id="profile-stat-member">Membre depuis</p>
+                        </article>
+                    </div>
+
+                    <article class="card panel profile-language-card">
+                        <div class="profile-section-head">
+                            <h4 id="profile-language-title">Langue</h4>
+                        </div>
+                        <div class="lang-grid" id="language-grid">
+                            <button class="lang-option active" data-lang="fr" type="button">
+                                <span class="lang-flag">🇫🇷</span>
+                                <span class="lang-name">Francais</span>
+                            </button>
+                            <button class="lang-option" data-lang="en" type="button">
+                                <span class="lang-flag">🇬🇧</span>
+                                <span class="lang-name">English</span>
+                            </button>
+                            <button class="lang-option" data-lang="de" type="button">
+                                <span class="lang-flag">🇩🇪</span>
+                                <span class="lang-name">Deutsch</span>
+                            </button>
+                        </div>
+                    </article>
+
+                    <article class="card panel profile-orders-card">
+                        <div class="profile-section-head">
+                            <h4 id="profile-orders-title">Mes Commandes</h4>
+                            <button class="refresh-chip" id="profile-orders-refresh" type="button">↻</button>
+                        </div>
+                        <div class="stack" id="profile-orders-preview"></div>
+                    </article>
+
+                    <article class="card panel profile-admin-card" id="profile-admin-card" style="display:none">
+                        <button class="btn primary admin-launch-btn" id="admin-panel-btn" type="button">⚙️ Gestion
+                            MiniApp</button>
+                    </article>
+                </div>
+            </section>
+
+            <section class="page" id="page-info">
+                <div class="page-head">
+                    <h2 id="info-title">Infos</h2>
+                    <p id="info-desc">Horaires, contact et paiement.</p>
+                </div>
+
+                <div class="stack">
+                    <article class="card panel">
+                        <h3 id="info-delivery-title">Livraison</h3>
+                        <p><strong id="info-hours-label">Horaires:</strong> 10H-22H Lun-Dim</p>
+                        <p><strong id="info-delay-label">Delai:</strong> 30-45mn</p>
+                        <p><strong id="info-zone-label">Zone:</strong> 54 (et ses Alentours)</p>
+                    </article>
+
+                    <article class="card panel">
+                        <h3 id="info-contact-title">Contact</h3>
+                        <p id="info-contact-username">Telegram: @williwonka54</p>
+                        <div class="inline-actions">
+                            <button class="btn primary" id="contact-btn" type="button">Contacter</button>
+                            <button class="btn ghost" id="channel-btn" type="button">Canal</button>
+                        </div>
+                    </article>
+
+                    <article class="card panel">
+                        <h3 id="info-payment-title">Paiement</h3>
+                        <p id="info-payment-desc">Paiement en especes uniquement.</p>
+                    </article>
+                </div>
+            </section>
+        </main>
+
+        <footer class="made-by-footer">
+            Made with ✦ Since <a class="made-by-link" href="https://t.me/tekasspaslatete" target="_blank"
+                rel="noopener">@tekasspaslatete</a>
+        </footer>
+
+        <nav class="bottom-nav" id="bottom-nav"> <button class="tab-btn active" data-page="home" type="button">
+                <span class="tab-icon" aria-hidden="true">🏠</span>
+                <span class="tab-label">Accueil</span>
+            </button>
+            <button class="tab-btn" data-page="cart" type="button">
+                <span class="tab-icon" aria-hidden="true">🛒</span>
+                <span class="tab-label">Panier</span>
+            </button>
+            <button class="tab-btn" data-page="history" type="button">
+                <span class="tab-icon" aria-hidden="true">🕘</span>
+                <span class="tab-label">Historique</span>
+            </button>
+            <button class="tab-btn" data-page="reviews" type="button">
+                <span class="tab-icon" aria-hidden="true">⭐</span>
+                <span class="tab-label">Avis</span>
+            </button>
+            <button class="tab-btn" data-page="profile" type="button">
+                <span class="tab-profile-avatar" id="nav-profile-avatar" aria-hidden="true">
+                    <img id="nav-profile-photo" alt="" loading="lazy" style="display: none;">
+                    <span id="nav-profile-letter">T</span>
+                </span>
+                <span class="tab-label">Profil</span>
+            </button>
+            <button class="tab-btn" data-page="info" type="button">
+                <span class="tab-icon" aria-hidden="true">✉</span>
+                <span class="tab-label">Infos</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- Panel Admin -->
+    <div class="admin-overlay" id="admin-overlay" style="display:none">
+        <div class="admin-panel">
+            <header class="admin-topbar">
+                <button class="top-pill" id="admin-close-btn" type="button">← Retour</button>
+                <span class="admin-heading">⚙️ Gestion MiniApp</span>
+                <span></span>
+            </header>
+            <div class="admin-tabs-bar">
+                <button class="admin-tab-btn active" data-admin-tab="reviews" type="button">Avis</button>
+                <button class="admin-tab-btn" data-admin-tab="orders" type="button">Commandes</button>
+                <button class="admin-tab-btn" data-admin-tab="products" type="button">Produits</button>
+                <button class="admin-tab-btn" data-admin-tab="categories" type="button">Catégories</button>
+            </div>
+            <div class="admin-tab-pane active" id="admin-tab-reviews">
+                <div id="admin-reviews-pending">
+                    <div class="admin-empty">Chargement...</div>
+                </div>
+            </div>
+            <div class="admin-tab-pane" id="admin-tab-orders">
+                <div id="admin-orders-all">
+                    <div class="admin-empty">Chargement...</div>
+                </div>
+            </div>
+            <div class="admin-tab-pane" id="admin-tab-products">
+                <div id="admin-products-content">
+                    <div class="admin-empty">Chargement...</div>
+                </div>
+            </div>
+            <div class="admin-tab-pane" id="admin-tab-categories">
+                <div id="admin-categories-content">
+                    <div class="admin-empty">Chargement...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="detail-overlay" id="detail-overlay" style="display: none;">
+        <div class="detail-panel" id="detail-panel">
+            <header class="detail-topbar">
+                <button class="top-pill" id="detail-close-btn" type="button">← Retour</button>
+                <div class="detail-logo-box">
+                    <img id="detail-brand-image" alt="Brand" src="https://picsum.photos/seed/brand-red/260/260"
+                        loading="lazy">
+                </div>
+            </header>
+
+            <section class="detail-stage">
+                <div class="detail-media-strip">
+                    <button class="slide-nav" id="detail-prev-btn" type="button" aria-label="Media precedent">‹</button>
+                    <div class="detail-media-window" id="detail-media-window">
+                        <div class="detail-media-track" id="detail-media-track"></div>
+                    </div>
+                    <button class="slide-nav" id="detail-next-btn" type="button" aria-label="Media suivant">›</button>
+                </div>
+
+                <div class="detail-thumbs" id="detail-thumbs"></div>
+                <div class="detail-counter" id="detail-slide-count">1 / 1</div>
+
+                <h2 class="detail-product-title" id="detail-name">Produit</h2>
+                <div class="detail-subline" id="detail-category-chip">Categorie</div>
+                <p class="detail-desc-box" id="detail-description">Description</p>
+
+                <article class="detail-quantity-card">
+                    <h3 id="detail-qty-title">Selectionner la Quantite</h3>
+                    <div class="qty-grid" id="detail-qty-grid"></div>
+                </article>
+            </section>
+
+            <footer class="detail-bottom-bar">
+                <button class="sound-chip" id="detail-mute-btn" type="button" aria-label="Couper le son">🔈</button>
+                <button class="detail-add-main" id="detail-add-btn" type="button">Ajouter</button>
+                <button class="detail-send-btn" id="detail-tele-btn" type="button" aria-label="Contacter">✈</button>
+            </footer>
+
+            <div class="detail-price-floating" id="detail-selected-price">0.00 EUR</div>
+        </div>
+    </div>
+
+    <script src="script.js?v=20260514e"></script>
+</body>
+
+</html>
