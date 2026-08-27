@@ -865,7 +865,7 @@
                     <img src="${img}" alt="${name}" loading="lazy" referrerpolicy="no-referrer">
                     <span class="status-dot" aria-hidden="true"></span>
                     ${badge}
-                    <div class="product-media-tools" aria-hidden="true">🍃 🛡️ 🌿</div>
+                    <div class="product-media-tools" aria-hidden="true">🧊🚀⚡️</div>
                 </div>
                 <div class="product-body">
                     <h3 class="product-title">${name}</h3>
