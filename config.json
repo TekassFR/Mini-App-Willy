@@ -107,21 +107,21 @@
       },
       {
         "id": 5,
-        "name": "Dry Permanent Marker",
+        "name": "NectarBoyz Farms Frozen",
         "description": "CALIPLATES FROZEN SIFT les vrais connaisseurs savent déjà tout, pas besoin d'en dire plus... 💥.",
         "price": 10,
         "emoji": "🍫",
-        "image": "",
+        "image": "https://i.ibb.co/S4DytLMM/photo-5801002427820478414-y.jpg",
         "category": "pizza",
         "isNew": true,
         "isPromo": false,
-        "video": "https://i.imgur.com/sUvhRnT.mp4",
+        "video": "https://i.imgur.com/me3Surf.mp4",
         "customPrices": {
           "1": 10.00,
           "2": 20.00,
-          "5": 50.00,
-          "10": 80.00,
-          "50": 300.00
+          "10": 90.00,
+          "50": 400.00,
+          "100": 550.00
         }
       },
       {
@@ -139,6 +139,64 @@
           "1": 80.00,
           "2": 130.00,
           "5": 300.00
+        }
+      },
+      {
+        "id": 7,
+        "name": "Fresh Frozen Forbidden",
+        "description": "STATIC ROOMSTRAINS STICKY PUNCH une explosion de saveurs en bouche un réel bonbon... petit poumon soyez pas choqués 💪.",
+        "price": 10,
+        "emoji": "🍫",
+        "image": "https://i.ibb.co/nNN9zMNV/photo-5801002427820478423-y.jpg",
+        "category": "pizza",
+        "isNew": true,
+        "isPromo": false,
+        "video": "https://i.imgur.com/siMlg6Z.mp4",
+        "customPrices": {
+          "1": 20.00,
+          "2": 40.00,
+          "5": 80.00,
+          "10": 150.00
+        }
+      },
+      {
+        "id": 8,
+        "name": "Dry Willy Wonka Edition",
+        "description": "STATIC ROOMSTRAINS STICKY PUNCH une explosion de saveurs en bouche un réel bonbon... petit poumon soyez pas choqués 💪.",
+        "price": 10,
+        "emoji": "🍫",
+        "image": "https://i.ibb.co/d4JKxJz3/photo-5801002427820478465-y.jpg",
+        "category": "pizza",
+        "isNew": true,
+        "isPromo": false,
+        "video": "https://i.imgur.com/9qRfbhv.mp4",
+        "customPrices": {
+          "1": 10.00,
+          "2": 20.00,
+          "5": 50.00,
+          "10": 70.00,
+          "50": 270.00,
+          "100": 500.00,
+          "500": 2300.00,
+          "1000": 4300.00
+        }
+      },
+      {
+        "id": 9,
+        "name": "Frozen Willy Wonka Edition",
+        "description": "STATIC ROOMSTRAINS STICKY PUNCH une explosion de saveurs en bouche un réel bonbon... petit poumon soyez pas choqués 💪.",
+        "price": 10,
+        "emoji": "🍫",
+        "image": "https://i.ibb.co/jkrtzV4z/photo-5801002427820478471-y.jpg",
+        "category": "pizza",
+        "isNew": true,
+        "isPromo": false,
+        "video": "https://i.imgur.com/yFBVij6.mp4",
+        "customPrices": {
+          "1": 20.00,
+          "2": 40.00,
+          "5": 80.00,
+          "10": 150.00
         }
       }
     ]
