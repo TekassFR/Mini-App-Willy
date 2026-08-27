@@ -2168,9 +2168,16 @@
             return;
         }
 
+        if (els.introSub) els.introSub.textContent = "Chargement de la boutique...";
+        setTimeout(() => {
+            if (els.introSub) els.introSub.textContent = "Préparation de la carte...";
+        }, 400);
+        setTimeout(() => {
+            if (els.introSub) els.introSub.textContent = "Ouverture du menu...";
+        }, 850);
         setTimeout(() => {
             document.body.classList.add("app-ready");
-        }, 900);
+        }, 1200);
     }
 
     document.addEventListener("DOMContentLoaded", bootstrap);
