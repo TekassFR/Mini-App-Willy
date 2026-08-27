@@ -2168,7 +2168,9 @@
             return;
         }
 
-        document.body.classList.add("app-ready");
+        setTimeout(() => {
+            document.body.classList.add("app-ready");
+        }, 900);
     }
 
     document.addEventListener("DOMContentLoaded", bootstrap);
