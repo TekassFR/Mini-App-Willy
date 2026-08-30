@@ -198,6 +198,41 @@
           "5": 80.00,
           "10": 150.00
         }
+        },
+        {
+        "id": 10,
+        "name": "Cali Plate Frozen Sift",
+        "description": "les vrais savent déjà pas besoin d'en dire plus sur ce prod... 🥇🤯🔥",
+        "price": 10,
+        "emoji": "🍫",
+        "image": "https://i.ibb.co/YTBhGTTp/5812270411960488136.jpg",
+        "category": "pizza",
+        "isNew": true,
+        "isPromo": false,
+        "video": "https://i.imgur.com/5jhlgk3.mp4",
+        "customPrices": {
+          "1": 30.00,
+          "5": 140.00,
+          "10": 280.00
+        }
+      },
+        {
+        "id": 11,
+        "name": "Candy Dry Frozen",
+        "description": "Dry de qualité faut le goûté pour comprendre 🍭",
+        "price": 10,
+        "emoji": "🍫",
+        "image": "https://i.ibb.co/b5byvYm7/5812270411960488143.jpg",
+        "category": "pizza",
+        "isNew": true,
+        "isPromo": false,
+        "video": "https://i.imgur.com/JozehEX.mp4",
+        "customPrices": {
+          "1": 20.00,
+          "2": 40.00,
+          "5": 50.00,
+          "10": 90.00
+        }
       }
     ]
   }
