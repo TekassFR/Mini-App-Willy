@@ -89,23 +89,6 @@
           }
         },
         {
-          "id": 4,
-          "name": "Frozen Plasma",
-          "description": "Frozen Plasma un régale pour les connaisseurs 🚀.",
-          "price": 10,
-          "emoji": "🍫",
-          "image": "https://i.ibb.co/9kdXM7c9/photo-5801002427820478482-y.jpg",
-          "category": "pizza",
-          "isNew": true,
-          "isPromo": false,
-          "video": "https://i.imgur.com/cqUiss2.mp4",
-          "customPrices": {
-            "2": 20.00,
-            "5": 50.00,
-            "10": 80.00
-          }
-        },
-        {
           "id": 5,
           "name": "NectarBoyz Farms Frozen",
           "description": "🔥 Arômes intenses, curage au top, signature terpénique distinctive un régale 😋🚀",
@@ -273,4 +256,3 @@
       ]
     }
   }
-  
