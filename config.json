@@ -1,239 +1,276 @@
 {
-  "restaurant": {
-    "name": "Restaurant Menu",
-    "description": "Mini-App Telegram pour commandes en ligne",
-    "currency": "€",
-    "delivery_fee": 2.50,
-    "min_order": 15.00
-  },
-  "admin": {
-    "telegram_username": "wonka544",
-    "channel_link": "https://t.me/+Hi2aQ4aYPn85ZTQ0",
-    "whitelist": [
-      "wonka544"
-    ]
-  },
-  "categories": {
-    "pizza": {
-      "name": "Hash",
-      "emoji": "🍫",
-      "description": "Nos produits en Hash"
-    }
-  },
-  "products": {
-    "pizza": [
-      {
-        "id": 1,
-        "name": "RMF Static 🇲🇦",
-        "description": "RMF static tout droit des montagnes du Rif 🇲🇦.",
-        "price": 10,
+    "restaurant": {
+      "name": "Restaurant Menu",
+      "description": "Mini-App Telegram pour commandes en ligne",
+      "currency": "€",
+      "delivery_fee": 2.50,
+      "min_order": 15.00
+    },
+    "admin": {
+      "telegram_username": "wonka544",
+      "channel_link": "https://t.me/+Hi2aQ4aYPn85ZTQ0",
+      "whitelist": [
+        "wonka544"
+      ]
+    },
+    "categories": {
+      "pizza": {
+        "name": "Hash",
         "emoji": "🍫",
-        "image": "https://i.ibb.co/DDzfYtq6/photo-5798750628006793619-y.jpg",
-        "category": "pizza",
-        "isNew": true,
-        "isPromo": false,
-        "video": "https://i.imgur.com/xA9SpaT.mp4",
-        "customPrices": {
-          "1": 10.00,
-          "2": 20.00,
-          "5": 50.00,
-          "10": 70.00,
-          "50": 270.00,
-          "100": 500.00,
-          "500": 2300.00,
-          "1000": 4300.00
-        }
-      },
-      {
-        "id": 2,
-        "name": "CALI MELTS Static",
-        "description": "Cali Melts Static un régale pour les connaisseurs ⚡.",
-        "price": 10,
-        "emoji": "🍫",
-        "image": "https://i.ibb.co/5X490s4N/photo-5798750628006793620-y.jpg",
-        "category": "pizza",
-        "isNew": true,
-        "isPromo": false,
-        "video": "https://i.imgur.com/Q35eV6X.mp4",
-        "customPrices": {
-          "1": 10.00,
-          "2": 20.00,
-          "5": 50.00,
-          "10": 70.00,
-          "50": 270.00,
-          "100": 500.00,
-          "500": 2300.00,
-          "1000": 4300.00
-        }
-      },
-      {
-        "id": 3,
-        "name": "Rolls Royce Static",
-        "description": "Static top rapport qualité/prix attention les petits pecs sa risque de vous étonner 💎.",
-        "price": 10,
-        "emoji": "🍫",
-        "image": "https://i.ibb.co/LD0Xs319/photo-5798750628006793616-y.jpg",
-        "category": "pizza",
-        "isNew": true,
-        "isPromo": false,
-        "video": "https://i.imgur.com/NPetPMK.mp4",
-        "customPrices": {
-          "1": 10.00,
-          "2": 20.00,
-          "5": 50.00,
-          "10": 70.00,
-          "50": 270.00,
-          "100": 500.00,
-          "500": 2300.00,
-          "1000": 4300.00
-        }
-      },
-      {
-        "id": 4,
-        "name": "Frozen Plasma",
-        "description": "Frozen Plasma un régale pour les connaisseurs 🚀.",
-        "price": 10,
-        "emoji": "🍫",
-        "image": "https://i.ibb.co/9kdXM7c9/photo-5801002427820478482-y.jpg",
-        "category": "pizza",
-        "isNew": true,
-        "isPromo": false,
-        "video": "https://i.imgur.com/cqUiss2.mp4",
-        "customPrices": {
-          "2": 20.00,
-          "5": 50.00,
-          "10": 80.00
-        }
-      },
-      {
-        "id": 5,
-        "name": "NectarBoyz Farms Frozen",
-        "description": "🔥 Arômes intenses, curage au top, signature terpénique distinctive un régale 😋🚀",
-        "price": 10,
-        "emoji": "🍫",
-        "image": "https://i.ibb.co/S4DytLMM/photo-5801002427820478414-y.jpg",
-        "category": "pizza",
-        "isNew": true,
-        "isPromo": false,
-        "video": "https://i.imgur.com/me3Surf.mp4",
-        "customPrices": {
-          "1": 10.00,
-          "2": 20.00,
-          "10": 90.00,
-          "50": 400.00,
-          "100": 550.00
-        }
-      },
-      {
-        "id": 6,
-        "name": "Puff Runtz x Litty 🇺🇸",
-        "description": "PUFF tout droit des US pas pour les petits poumons 💪.",
-        "price": 10,
-        "emoji": "🍫",
-        "image": "https://i.ibb.co/Kz3Fx8Zj/photo-5798750628006793613-y.jpg",
-        "category": "pizza",
-        "isNew": true,
-        "isPromo": false,
-        "video": "",
-        "customPrices": {
-          "1": 80.00,
-          "2": 130.00,
-          "5": 300.00
-        }
-      },
-      {
-        "id": 7,
-        "name": "Fresh Frozen Forbidden",
-        "description": "👃 Signature aromatique distinctive / décollage garanti 🚀",
-        "price": 10,
-        "emoji": "🍫",
-        "image": "https://i.ibb.co/nNN9zMNV/photo-5801002427820478423-y.jpg",
-        "category": "pizza",
-        "isNew": true,
-        "isPromo": false,
-        "video": "https://i.imgur.com/siMlg6Z.mp4",
-        "customPrices": {
-          "1": 20.00,
-          "2": 40.00,
-          "5": 80.00,
-          "10": 150.00
-        }
-      },
-      {
-        "id": 8,
-        "name": "Dry Willy Wonka Edition",
-        "description": "⚡️ Pensées pour les palais exigeants / régalez vous 🚀.",
-        "price": 10,
-        "emoji": "🍫",
-        "image": "https://i.ibb.co/pBBYv3yg/photo-5801002427820478465-y.jpg",
-        "category": "pizza",
-        "isNew": true,
-        "isPromo": false,
-        "video": "https://i.imgur.com/9qRfbhv.mp4",
-        "customPrices": {
-          "1": 10.00,
-          "2": 20.00,
-          "5": 50.00,
-          "10": 70.00,
-          "50": 270.00,
-          "100": 500.00,
-          "500": 2300.00,
-          "1000": 4300.00
-        }
-      },
-      {
-        "id": 9,
-        "name": "Frozen Willy Wonka Edition",
-        "description": "🔥 Arômes intenses, curage au top, signature terpénique distinctive un régale 😋",
-        "price": 10,
-        "emoji": "🍫",
-        "image": "https://i.ibb.co/jkrtzV4z/photo-5801002427820478471-y.jpg",
-        "category": "pizza",
-        "isNew": true,
-        "isPromo": false,
-        "video": "https://i.imgur.com/yFBVij6.mp4",
-        "customPrices": {
-          "1": 20.00,
-          "2": 40.00,
-          "5": 80.00,
-          "10": 150.00
-        }
+        "description": "Nos produits en Hash"
+      }
+    },
+    "products": {
+      "pizza": [
+        {
+          "id": 1,
+          "name": "RMF Static 🇲🇦",
+          "description": "RMF static tout droit des montagnes du Rif 🇲🇦.",
+          "price": 10,
+          "emoji": "🍫",
+          "image": "https://i.ibb.co/DDzfYtq6/photo-5798750628006793619-y.jpg",
+          "category": "pizza",
+          "isNew": true,
+          "isPromo": false,
+          "video": "https://i.imgur.com/xA9SpaT.mp4",
+          "customPrices": {
+            "1": 10.00,
+            "2": 20.00,
+            "5": 50.00,
+            "10": 70.00,
+            "50": 270.00,
+            "100": 500.00,
+            "500": 2300.00,
+            "1000": 4300.00
+          }
         },
         {
-        "id": 10,
-        "name": "Cali Plate Frozen Sift",
-        "description": "les vrais savent déjà pas besoin d'en dire plus sur ce prod... 🥇🤯🔥",
-        "price": 10,
-        "emoji": "🍫",
-        "image": "https://i.ibb.co/YTBhGTTp/5812270411960488136.jpg",
-        "category": "pizza",
-        "isNew": true,
-        "isPromo": false,
-        "video": "https://i.imgur.com/5jhlgk3.mp4",
-        "customPrices": {
-          "1": 30.00,
-          "5": 140.00,
-          "10": 280.00
-        }
-      },
+          "id": 2,
+          "name": "CALI MELTS Static",
+          "description": "Cali Melts Static un régale pour les connaisseurs ⚡.",
+          "price": 10,
+          "emoji": "🍫",
+          "image": "https://i.ibb.co/5X490s4N/photo-5798750628006793620-y.jpg",
+          "category": "pizza",
+          "isNew": true,
+          "isPromo": false,
+          "video": "https://i.imgur.com/Q35eV6X.mp4",
+          "customPrices": {
+            "1": 10.00,
+            "2": 20.00,
+            "5": 50.00,
+            "10": 70.00,
+            "50": 270.00,
+            "100": 500.00,
+            "500": 2300.00,
+            "1000": 4300.00
+          }
+        },
         {
-        "id": 11,
-        "name": "Candy Dry Frozen",
-        "description": "Dry de qualité faut le goûté pour comprendre 🍭",
+          "id": 3,
+          "name": "Rolls Royce Static",
+          "description": "Static top rapport qualité/prix attention les petits pecs sa risque de vous étonner 💎.",
+          "price": 10,
+          "emoji": "🍫",
+          "image": "https://i.ibb.co/LD0Xs319/photo-5798750628006793616-y.jpg",
+          "category": "pizza",
+          "isNew": true,
+          "isPromo": false,
+          "video": "https://i.imgur.com/NPetPMK.mp4",
+          "customPrices": {
+            "1": 10.00,
+            "2": 20.00,
+            "5": 50.00,
+            "10": 70.00,
+            "50": 270.00,
+            "100": 500.00,
+            "500": 2300.00,
+            "1000": 4300.00
+          }
+        },
+        {
+          "id": 4,
+          "name": "Frozen Plasma",
+          "description": "Frozen Plasma un régale pour les connaisseurs 🚀.",
+          "price": 10,
+          "emoji": "🍫",
+          "image": "https://i.ibb.co/9kdXM7c9/photo-5801002427820478482-y.jpg",
+          "category": "pizza",
+          "isNew": true,
+          "isPromo": false,
+          "video": "https://i.imgur.com/cqUiss2.mp4",
+          "customPrices": {
+            "2": 20.00,
+            "5": 50.00,
+            "10": 80.00
+          }
+        },
+        {
+          "id": 5,
+          "name": "NectarBoyz Farms Frozen",
+          "description": "🔥 Arômes intenses, curage au top, signature terpénique distinctive un régale 😋🚀",
+          "price": 10,
+          "emoji": "🍫",
+          "image": "https://i.ibb.co/S4DytLMM/photo-5801002427820478414-y.jpg",
+          "category": "pizza",
+          "isNew": true,
+          "isPromo": false,
+          "video": "https://i.imgur.com/me3Surf.mp4",
+          "customPrices": {
+            "1": 10.00,
+            "2": 20.00,
+            "10": 90.00,
+            "50": 400.00,
+            "100": 550.00
+          }
+        },
+        {
+          "id": 6,
+          "name": "Puff Runtz x Litty 🇺🇸",
+          "description": "PUFF tout droit des US pas pour les petits poumons 💪.",
+          "price": 10,
+          "emoji": "🍫",
+          "image": "https://i.ibb.co/Kz3Fx8Zj/photo-5798750628006793613-y.jpg",
+          "category": "pizza",
+          "isNew": true,
+          "isPromo": false,
+          "video": "",
+          "customPrices": {
+            "1": 80.00,
+            "2": 130.00,
+            "5": 300.00
+          }
+        },
+        {
+          "id": 7,
+          "name": "Fresh Frozen Forbidden",
+          "description": "👃 Signature aromatique distinctive / décollage garanti 🚀",
+          "price": 10,
+          "emoji": "🍫",
+          "image": "https://i.ibb.co/nNN9zMNV/photo-5801002427820478423-y.jpg",
+          "category": "pizza",
+          "isNew": true,
+          "isPromo": false,
+          "video": "https://i.imgur.com/siMlg6Z.mp4",
+          "customPrices": {
+            "1": 20.00,
+            "2": 40.00,
+            "5": 80.00,
+            "10": 150.00
+          }
+        },
+        {
+          "id": 8,
+          "name": "Dry Willy Wonka Edition",
+          "description": "⚡️ Pensées pour les palais exigeants / régalez vous 🚀.",
+          "price": 10,
+          "emoji": "🍫",
+          "image": "https://i.ibb.co/pBBYv3yg/photo-5801002427820478465-y.jpg",
+          "category": "pizza",
+          "isNew": true,
+          "isPromo": false,
+          "video": "https://i.imgur.com/9qRfbhv.mp4",
+          "customPrices": {
+            "1": 10.00,
+            "2": 20.00,
+            "5": 50.00,
+            "10": 70.00,
+            "50": 270.00,
+            "100": 500.00,
+            "500": 2300.00,
+            "1000": 4300.00
+          }
+        },
+        {
+          "id": 9,
+          "name": "Frozen Willy Wonka Edition",
+          "description": "🔥 Arômes intenses, curage au top, signature terpénique distinctive un régale 😋",
+          "price": 10,
+          "emoji": "🍫",
+          "image": "https://i.ibb.co/jkrtzV4z/photo-5801002427820478471-y.jpg",
+          "category": "pizza",
+          "isNew": true,
+          "isPromo": false,
+          "video": "https://i.imgur.com/yFBVij6.mp4",
+          "customPrices": {
+            "1": 20.00,
+            "2": 40.00,
+            "5": 80.00,
+            "10": 150.00
+          }
+          },
+          {
+          "id": 10,
+          "name": "Cali Plate Frozen Sift",
+          "description": "les vrais savent déjà pas besoin d'en dire plus sur ce prod... 🥇🤯🔥",
+          "price": 10,
+          "emoji": "🍫",
+          "image": "https://i.ibb.co/YTBhGTTp/5812270411960488136.jpg",
+          "category": "pizza",
+          "isNew": true,
+          "isPromo": false,
+          "video": "https://i.imgur.com/5jhlgk3.mp4",
+          "customPrices": {
+            "1": 30.00,
+            "5": 140.00,
+            "10": 280.00
+          }
+        },
+          {
+          "id": 11,
+          "name": "Candy Dry Frozen",
+          "description": "Dry de qualité faut le goûté pour comprendre 🍭",
+          "price": 10,
+          "emoji": "🍫",
+          "image": "https://i.ibb.co/b5byvYm7/5812270411960488143.jpg",
+          "category": "pizza",
+          "isNew": true,
+          "isPromo": false,
+          "video": "https://i.imgur.com/JozehEX.mp4",
+          "customPrices": {
+            "1": 20.00,
+            "2": 40.00,
+            "5": 50.00,
+            "10": 90.00
+          }
+        },
+      {
+      "id": 12,
+      "name": "Static Sift 90/120u",
+      "description": "Static Sift des ténèbres pas pour les petits fumeurs... a venir découvrir ⚡️",
+      "price": 10,
+      "emoji": "🍫",
+      "image": "https://i.ibb.co/nhN9t77/Sans-titre.jpg",
+      "category": "pizza",
+      "isNew": true,
+      "isPromo": false,
+      "video": "https://i.imgur.com/tvoerpb.mp4",
+      "customPrices": {
+        "1": 10.00,
+        "2": 20.00,
+        "5": 50.00,
+        "10": 70.00
+      }
+    },
+      {
+        "id": 13,
+        "name": "Static Sift US",
+        "description": "Static Sift les US devant votre porte, produit de fou faut test pour y croire 🇺🇸🍯",
         "price": 10,
         "emoji": "🍫",
-        "image": "https://i.ibb.co/b5byvYm7/5812270411960488143.jpg",
+        "image": "https://i.ibb.co/y1HPcs3/5812270411960488256.jpg",
         "category": "pizza",
         "isNew": true,
         "isPromo": false,
-        "video": "https://i.imgur.com/JozehEX.mp4",
+        "video": "https://i.imgur.com/Y3gEmvA.mp4",
         "customPrices": {
           "1": 20.00,
           "2": 40.00,
-          "5": 50.00,
-          "10": 90.00
+          "5": 80.00,
+          "10": 140.00
         }
-      }
-    ]
+        }
+      ]
+    }
   }
-}
+  
