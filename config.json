@@ -7,6 +7,7 @@
       "min_order": 15.00
     },
     "admin": {
+      "api_base": "http://185.185.83.209:4001",
       "telegram_username": "wonka544",
       "channel_link": "https://t.me/+Hi2aQ4aYPn85ZTQ0",
       "whitelist": [
