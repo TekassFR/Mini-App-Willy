@@ -1924,9 +1924,9 @@
         els.adminProductsContent.innerHTML = `<div class="admin-empty">Chargement...</div>`;
         try {
             let cfg = state.config && typeof state.config === "object" ? state.config : null;
-            const cfgResp = await fetch(`./config.json?t=${Date.now()}`, { cache: "no-store" });
-            if (cfgResp.ok) {
-                cfg = await cfgResp.json();
+            if (!cfg) {
+                await loadConfig();
+                cfg = state.config;
             }
             if (!cfg) throw new Error("config indisponible");
             const categories = cfg.categories || {};
@@ -2151,9 +2151,9 @@
         els.adminCategoriesContent.innerHTML = `<div class="admin-empty">Chargement...</div>`;
         try {
             let cfg = state.config && typeof state.config === "object" ? state.config : null;
-            const cfgResp = await fetch(`./config.json?t=${Date.now()}`, { cache: "no-store" });
-            if (cfgResp.ok) {
-                cfg = await cfgResp.json();
+            if (!cfg) {
+                await loadConfig();
+                cfg = state.config;
             }
             if (!cfg) throw new Error("config indisponible");
             const categories = cfg.categories || {};
@@ -2287,9 +2287,9 @@
         els.adminSettingsContent.innerHTML = `<div class="admin-empty">Chargement des paramètres...</div>`;
         try {
             let cfg = state.config && typeof state.config === "object" ? state.config : null;
-            const cfgResp = await fetch(`./config.json?t=${Date.now()}`, { cache: "no-store" });
-            if (cfgResp.ok) {
-                cfg = await cfgResp.json();
+            if (!cfg) {
+                await loadConfig();
+                cfg = state.config;
             }
             if (!cfg) throw new Error("config indisponible");
 
