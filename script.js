@@ -742,7 +742,7 @@
         const bases = getWriteApiBases();
         let cfg = null;
 
-        // 1. Essayer de charger la configuration LIVE en direct depuis le serveur VPS
+        // Charger la configuration LIVE uniquement depuis le serveur VPS
         for (const base of bases) {
             if (!base) continue;
             try {
@@ -757,11 +757,19 @@
             } catch (_) {}
         }
 
-        // 2. Fallback sur le fichier statique local si le VPS n'est pas joignable
+        // IMPORTANT: Si le VPS est injoignable, on garde state.config existant plutôt
+        // que de retomber sur le fichier statique Vercel qui est figé dans le temps.
         if (!cfg) {
-            const resp = await fetch(`./config.json?t=${Date.now()}`, { cache: "no-store" });
-            if (!resp.ok) throw new Error("config.json introuvable");
-            cfg = await resp.json();
+            if (state.config && typeof state.config === "object") {
+                // Garder le state actuel : ne rien écraser
+                return;
+            }
+            // Premier chargement uniquement - fallback sur fichier statique
+            try {
+                const resp = await fetch(`./config.json?t=${Date.now()}`, { cache: "no-store" });
+                if (resp.ok) cfg = await resp.json();
+            } catch (_) {}
+            if (!cfg) throw new Error("Impossible de charger la configuration (VPS inaccessible)");
         }
 
         state.config = cfg;
@@ -1990,14 +1998,16 @@
             }
 
             const addBtn = document.getElementById("admin-add-product-btn");
-            if (addBtn) addBtn.addEventListener("click", () => showAdminProductForm(null, cfg));
+            // { once: true } : le listener se supprime automatiquement après le 1er clic
+            // Cela évite l'accumulation de listeners lors des re-rendus successifs
+            if (addBtn) addBtn.addEventListener("click", () => showAdminProductForm(null, cfg), { once: true });
 
             els.adminProductsContent.querySelectorAll(".admin-btn-edit[data-pid]").forEach((btn) => {
                 btn.addEventListener("click", () => {
                     const pid = String(btn.dataset.pid || "").trim();
                     const product = allProductsList.find((p) => String(p.id).trim() === pid);
                     if (product) showAdminProductForm(product, cfg);
-                });
+                }, { once: true });
             });
 
             els.adminProductsContent.querySelectorAll(".admin-btn-reject[data-pid]").forEach((btn) => {
@@ -2005,8 +2015,9 @@
                     if (!confirm("Supprimer ce produit ?")) return;
                     const pid = String(btn.dataset.pid || "").trim();
                     if (!pid) return;
+                    btn.disabled = true;
                     await adminDeleteProduct(pid);
-                });
+                }, { once: true });
             });
 
             els.adminProductsContent.querySelectorAll(".admin-btn-reorder").forEach((btn) => {
@@ -2014,8 +2025,9 @@
                     const pid = String(btn.dataset.pid || "").trim();
                     const cat = btn.dataset.cat;
                     const dir = btn.dataset.dir;
+                    btn.disabled = true;
                     await adminReorderProduct(cat, pid, dir);
-                });
+                }, { once: true });
             });
 
         } catch (_) {
@@ -2131,25 +2143,31 @@
         }
     }
 
+    let _deletingProductId = null; // garde anti-doublon global
     async function adminDeleteProduct(productId) {
+        const pidStr = String(productId || "").trim();
+        if (!pidStr || _deletingProductId === pidStr) return; // déjà en cours
+        _deletingProductId = pidStr;
         try {
             const resp = await fetchWriteApi("/admin/products/delete", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ tg_username: getAdminUsername(), product_id: productId })
+                body: JSON.stringify({ tg_username: getAdminUsername(), product_id: pidStr })
             });
             const data = await readJsonIfAny(resp);
-            if (resp.ok && (!data || data.success !== false)) {
-                if (data && data.config) applyUpdatedConfig(data.config);
+            if (resp.ok && data && data.success === true) {
+                if (data.config) applyUpdatedConfig(data.config);
                 showToast("Produit supprimé ! 🗑️");
                 renderCategories();
                 renderProducts();
                 await loadAdminProducts();
             } else {
-                showToast((data && data.error) || `Erreur lors de la suppression (HTTP ${resp.status}).`, "error");
+                showToast((data && data.error) || `Erreur suppression (HTTP ${resp.status}).`, "error");
             }
         } catch (error) {
             showToast("Impossible de contacter le serveur VPS.", "error");
+        } finally {
+            _deletingProductId = null; // libérer le verrou
         }
     }
 
