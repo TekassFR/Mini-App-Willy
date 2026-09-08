@@ -255,8 +255,10 @@
         adminOrdersAll: document.getElementById("admin-orders-all"),
         adminTabProducts: document.getElementById("admin-tab-products"),
         adminTabCategories: document.getElementById("admin-tab-categories"),
+        adminTabSettings: document.getElementById("admin-tab-settings"),
         adminProductsContent: document.getElementById("admin-products-content"),
         adminCategoriesContent: document.getElementById("admin-categories-content"),
+        adminSettingsContent: document.getElementById("admin-settings-content"),
 
         infoTitle: document.getElementById("info-title"),
         infoDesc: document.getElementById("info-desc"),
@@ -1715,9 +1717,13 @@
         if (els.adminTabOrders) els.adminTabOrders.classList.toggle("active", tabName === "orders");
         if (els.adminTabProducts) els.adminTabProducts.classList.toggle("active", tabName === "products");
         if (els.adminTabCategories) els.adminTabCategories.classList.toggle("active", tabName === "categories");
+        if (els.adminTabSettings) els.adminTabSettings.classList.toggle("active", tabName === "settings");
+
+        if (tabName === "reviews") loadAdminReviews();
         if (tabName === "orders") loadAdminOrders();
         if (tabName === "products") loadAdminProducts();
         if (tabName === "categories") loadAdminCategories();
+        if (tabName === "settings") loadAdminSettings();
     }
 
     function getAdminUsername() {
@@ -1730,36 +1736,63 @@
         els.adminReviewsPending.innerHTML = `<div class="admin-empty">Chargement...</div>`;
         try {
             const resp = await fetch(`./reviews.json?t=${Date.now()}`, { cache: "no-store" });
-            if (!resp.ok) {
-                els.adminReviewsPending.innerHTML = `<div class="admin-empty">Aucun avis en attente ✓</div>`;
-                return;
+            let pending = [];
+            let approved = [];
+            if (resp.ok) {
+                const data = await resp.json();
+                pending = Array.isArray(data.pending) ? data.pending : [];
+                approved = Array.isArray(data.approved) ? data.approved : [];
             }
-            const data = await resp.json();
-            const pending = Array.isArray(data.pending) ? data.pending : [];
-            if (!pending.length) {
-                els.adminReviewsPending.innerHTML = `<div class="admin-empty">Aucun avis en attente ✓</div>`;
-                return;
+
+            let html = "";
+            if (pending.length > 0) {
+                html += `<h4 style="color:var(--accent);margin:8px 0;">⏳ Avis en attente (${pending.length})</h4>`;
+                html += pending.map((r) => {
+                    const rawStars = Math.max(1, Math.min(5, r.stars || 5));
+                    const stars = "★".repeat(rawStars) + "☆".repeat(5 - rawStars);
+                    const date = new Date(r.timestamp || Date.now()).toLocaleString("fr-FR");
+                    const handle = r.telegramUsername ? ` · @${sanitize(r.telegramUsername)}` : "";
+                    return `
+                        <div class="admin-review-card">
+                            <div class="admin-review-header">
+                                <span class="admin-review-author">${sanitize(r.author || "Anonyme")}</span>
+                                <span class="admin-review-stars">${stars}</span>
+                            </div>
+                            <p class="admin-review-msg">${sanitize(r.message || "")}</p>
+                            <div class="admin-review-meta">${date}${handle}</div>
+                            <div class="admin-review-actions">
+                                <button class="admin-btn-approve" data-ts="${r.timestamp}" type="button">✓ Approuver</button>
+                                <button class="admin-btn-reject" data-ts="${r.timestamp}" type="button">✗ Refuser</button>
+                            </div>
+                        </div>
+                    `;
+                }).join("");
+            } else {
+                html += `<div class="admin-empty" style="padding:16px;margin-bottom:12px;">Aucun avis en attente ✓</div>`;
             }
-            els.adminReviewsPending.innerHTML = pending.map((r) => {
-                const rawStars = Math.max(1, Math.min(5, r.stars || 5));
-                const stars = "★".repeat(rawStars) + "☆".repeat(5 - rawStars);
-                const date = new Date(r.timestamp || Date.now()).toLocaleString("fr-FR");
-                const handle = r.telegramUsername ? ` · @${sanitize(r.telegramUsername)}` : "@Passionterps67";
-                return `
-                    <div class="admin-review-card">
-                        <div class="admin-review-header">
-                            <span class="admin-review-author">${sanitize(r.author || "Anonyme")}</span>
-                            <span class="admin-review-stars">${stars}</span>
+
+            if (approved.length > 0) {
+                html += `<h4 style="color:var(--text);margin:16px 0 8px;">✅ Avis publiés sur le site (${approved.length})</h4>`;
+                html += approved.slice().reverse().map((r) => {
+                    const rawStars = Math.max(1, Math.min(5, r.stars || 5));
+                    const stars = "★".repeat(rawStars) + "☆".repeat(5 - rawStars);
+                    const date = new Date(r.timestamp || Date.now()).toLocaleString("fr-FR");
+                    const handle = r.telegramUsername ? ` · @${sanitize(r.telegramUsername)}` : "";
+                    return `
+                        <div class="admin-review-card" style="border-color:rgba(255,255,255,0.08);">
+                            <div class="admin-review-header">
+                                <span class="admin-review-author">${sanitize(r.author || "Anonyme")}</span>
+                                <span class="admin-review-stars">${stars}</span>
+                            </div>
+                            <p class="admin-review-msg">${sanitize(r.message || "")}</p>
+                            <div class="admin-review-meta">${date}${handle}</div>
+                            <button class="admin-btn-delete-approved" data-ts="${r.timestamp}" type="button">🗑 Supprimer de la boutique</button>
                         </div>
-                        <p class="admin-review-msg">${sanitize(r.message || "")}</p>
-                        <div class="admin-review-meta">${date}${handle}</div>
-                        <div class="admin-review-actions">
-                            <button class="admin-btn-approve" data-ts="${r.timestamp}" type="button">✓ Approuver</button>
-                            <button class="admin-btn-reject" data-ts="${r.timestamp}" type="button">✗ Refuser</button>
-                        </div>
-                    </div>
-                `;
-            }).join("");
+                    `;
+                }).join("");
+            }
+
+            els.adminReviewsPending.innerHTML = html;
 
             els.adminReviewsPending.querySelectorAll(".admin-btn-approve").forEach((btn) => {
                 btn.addEventListener("click", () => adminApproveReview(Number(btn.dataset.ts)));
@@ -1767,8 +1800,11 @@
             els.adminReviewsPending.querySelectorAll(".admin-btn-reject").forEach((btn) => {
                 btn.addEventListener("click", () => adminRejectReview(Number(btn.dataset.ts)));
             });
+            els.adminReviewsPending.querySelectorAll(".admin-btn-delete-approved").forEach((btn) => {
+                btn.addEventListener("click", () => adminDeleteApprovedReview(Number(btn.dataset.ts)));
+            });
         } catch (_) {
-            els.adminReviewsPending.innerHTML = `<div class="admin-empty">Aucun avis en attente ✓</div>`;
+            els.adminReviewsPending.innerHTML = `<div class="admin-empty">Erreur chargement des avis.</div>`;
         }
     }
 
@@ -1780,11 +1816,14 @@
                 body: JSON.stringify({ tg_username: getAdminUsername(), timestamp })
             });
             if (resp.ok) {
+                showToast("Avis approuvé et publié ! ⭐");
                 await syncReviewsFromLocalApi();
                 renderReviews();
                 await loadAdminReviews();
             }
-        } catch (_) { }
+        } catch (_) {
+            showToast("Erreur lors de l'approbation");
+        }
     }
 
     async function adminRejectReview(timestamp) {
@@ -1794,8 +1833,32 @@
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ tg_username: getAdminUsername(), timestamp })
             });
-            if (resp.ok) await loadAdminReviews();
-        } catch (_) { }
+            if (resp.ok) {
+                showToast("Avis refusé");
+                await loadAdminReviews();
+            }
+        } catch (_) {
+            showToast("Erreur lors du refus");
+        }
+    }
+
+    async function adminDeleteApprovedReview(timestamp) {
+        if (!confirm("Supprimer cet avis publié ?")) return;
+        try {
+            const resp = await fetchWriteApi("/admin/reviews/delete-approved", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ tg_username: getAdminUsername(), timestamp })
+            }, true);
+            if (resp.ok) {
+                showToast("Avis supprimé ! 🗑️");
+                await syncReviewsFromLocalApi();
+                renderReviews();
+                await loadAdminReviews();
+            }
+        } catch (_) {
+            showToast("Erreur lors de la suppression");
+        }
     }
 
     async function loadAdminOrders() {
@@ -1808,7 +1871,6 @@
                 return;
             }
             const data = await resp.json();
-            // orders.json est un tableau direct, trié du plus récent au plus ancien
             const orders = Array.isArray(data) ? [...data].reverse() : [];
             if (!orders.length) {
                 els.adminOrdersAll.innerHTML = `<div class="admin-empty">Aucune commande enregistrée.</div>`;
@@ -1863,47 +1925,107 @@
             if (!cfg) throw new Error("config indisponible");
             const categories = cfg.categories || {};
             const products = cfg.products || {};
-            const allProducts = [];
-            for (const [catKey, prods] of Object.entries(products)) {
-                for (const p of prods) allProducts.push({ ...p, category: catKey });
-            }
             const catNames = {};
             for (const [key, cat] of Object.entries(categories)) catNames[key] = `${cat.emoji || ""} ${cat.name}`;
+
             let html = `<button class="admin-add-btn" id="admin-add-product-btn" type="button">+ Ajouter un produit</button>`;
-            if (!allProducts.length) {
-                html += `<div class="admin-empty">Aucun produit.</div>`;
-            } else {
-                html += allProducts.map((p) => `
+
+            let totalProds = 0;
+            for (const [catKey, prods] of Object.entries(products)) {
+                if (!Array.isArray(prods) || !prods.length) continue;
+                totalProds += prods.length;
+                html += `<h4 style="color:var(--accent);margin:14px 0 6px;">${sanitize(catNames[catKey] || catKey)} (${prods.length})</h4>`;
+                html += prods.map((p, idx) => {
+                    const isFirst = idx === 0;
+                    const isLast = idx === prods.length - 1;
+                    const thumb = p.image ? `<img class="admin-product-thumb" src="${sanitize(p.image)}" alt="">` : `<div class="admin-product-thumb" style="display:flex;align-items:center;justify-content:center;font-size:1.2rem;">${sanitize(p.emoji || "📦")}</div>`;
+                    return `
                     <div class="admin-product-card">
-                        <div class="admin-product-header">
-                            <span class="admin-product-name">${sanitize(p.name || "")}</span>
-                            <span class="admin-product-price">${(p.price || 0).toFixed(2)} €</span>
+                        <div class="admin-product-row">
+                            <div class="admin-reorder-btns">
+                                <button class="admin-btn-reorder" data-pid="${p.id}" data-cat="${catKey}" data-dir="up" type="button" ${isFirst ? "disabled" : ""}>▲</button>
+                                <button class="admin-btn-reorder" data-pid="${p.id}" data-cat="${catKey}" data-dir="down" type="button" ${isLast ? "disabled" : ""}>▼</button>
+                            </div>
+                            ${thumb}
+                            <div style="flex:1;min-width:0;">
+                                <div class="admin-product-header" style="margin-bottom:2px;">
+                                    <span class="admin-product-name">${sanitize(p.name || "")}</span>
+                                    <span class="admin-product-price">${(p.price || 0).toFixed(2)} €</span>
+                                </div>
+                                <span class="admin-product-cat">${sanitize(catNames[catKey] || catKey)}</span>
+                            </div>
                         </div>
-                        <span class="admin-product-cat">${sanitize(catNames[p.category] || p.category)}</span>
-                        <div class="admin-review-actions">
+                        <div class="admin-review-actions" style="margin-top:6px;">
                             <button class="admin-btn-edit" data-pid="${p.id}" type="button">✏️ Modifier</button>
                             <button class="admin-btn-reject" data-pid="${p.id}" type="button">🗑 Supprimer</button>
                         </div>
-                    </div>`).join("");
+                    </div>`;
+                }).join("");
             }
+
+            if (!totalProds) {
+                html += `<div class="admin-empty">Aucun produit dans le catalogue.</div>`;
+            }
+
             els.adminProductsContent.innerHTML = html;
+
+            const allProductsList = [];
+            for (const [catKey, prods] of Object.entries(products)) {
+                if (Array.isArray(prods)) {
+                    for (const p of prods) allProductsList.push({ ...p, category: catKey });
+                }
+            }
+
             const addBtn = document.getElementById("admin-add-product-btn");
             if (addBtn) addBtn.addEventListener("click", () => showAdminProductForm(null, cfg));
+
             els.adminProductsContent.querySelectorAll(".admin-btn-edit[data-pid]").forEach((btn) => {
                 btn.addEventListener("click", () => {
                     const pid = Number(btn.dataset.pid);
-                    const product = allProducts.find((p) => p.id === pid);
+                    const product = allProductsList.find((p) => p.id === pid);
                     if (product) showAdminProductForm(product, cfg);
                 });
             });
+
             els.adminProductsContent.querySelectorAll(".admin-btn-reject[data-pid]").forEach((btn) => {
                 btn.addEventListener("click", async () => {
                     if (!confirm("Supprimer ce produit ?")) return;
                     await adminDeleteProduct(Number(btn.dataset.pid));
                 });
             });
+
+            els.adminProductsContent.querySelectorAll(".admin-btn-reorder").forEach((btn) => {
+                btn.addEventListener("click", async () => {
+                    const pid = Number(btn.dataset.pid);
+                    const cat = btn.dataset.cat;
+                    const dir = btn.dataset.dir;
+                    await adminReorderProduct(cat, pid, dir);
+                });
+            });
+
         } catch (_) {
             els.adminProductsContent.innerHTML = `<div class="admin-empty">Impossible de charger les produits.<br>Réessaie dans quelques secondes.</div>`;
+        }
+    }
+
+    async function adminReorderProduct(category, productId, direction) {
+        try {
+            const resp = await fetchWriteApi("/admin/products/reorder", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ tg_username: getAdminUsername(), category, product_id: productId, direction })
+            }, true);
+            const data = await readJsonIfAny(resp);
+            if (resp.ok && (!data || data.success !== false)) {
+                showToast("Ordre mis à jour ↕️");
+                await loadConfig();
+                renderProducts();
+                await loadAdminProducts();
+            } else {
+                showToast((data && data.error) || "Erreur réorganisation");
+            }
+        } catch (_) {
+            showToast("Erreur de connexion");
         }
     }
 
@@ -1973,6 +2095,7 @@
             }, true);
             const data = await readJsonIfAny(resp);
             if (resp.ok && (!data || data.success !== false)) {
+                showToast("Produit sauvegardé ! 📦");
                 await loadConfig();
                 renderCategories();
                 renderProducts();
@@ -1994,6 +2117,7 @@
             }, true);
             const data = await readJsonIfAny(resp);
             if (resp.ok && (!data || data.success !== false)) {
+                showToast("Produit supprimé ! 🗑️");
                 await loadConfig();
                 renderCategories();
                 renderProducts();
@@ -2107,6 +2231,7 @@
             }, true);
             const data = await readJsonIfAny(resp);
             if (resp.ok && (!data || data.success !== false)) {
+                showToast("Catégorie sauvegardée ! 📁");
                 await loadConfig();
                 renderCategories();
                 renderProducts();
@@ -2128,6 +2253,7 @@
             }, true);
             const data = await readJsonIfAny(resp);
             if (resp.ok && (!data || data.success !== false)) {
+                showToast("Catégorie supprimée ! 🗑️");
                 await loadConfig();
                 renderCategories();
                 renderProducts();
@@ -2137,6 +2263,193 @@
             }
         } catch (error) {
             alert("Impossible de contacter le serveur.");
+        }
+    }
+
+    // ===== ADMIN PARAMÈTRES (SETTINGS) =====
+
+    async function loadAdminSettings() {
+        if (!els.adminSettingsContent) return;
+        els.adminSettingsContent.innerHTML = `<div class="admin-empty">Chargement des paramètres...</div>`;
+        try {
+            let cfg = state.config && typeof state.config === "object" ? state.config : null;
+            const cfgResp = await fetch(`./config.json?t=${Date.now()}`, { cache: "no-store" });
+            if (cfgResp.ok) {
+                cfg = await cfgResp.json();
+            }
+            if (!cfg) throw new Error("config indisponible");
+
+            const rest = cfg.restaurant || {};
+            const adminCfg = cfg.admin || {};
+            const whitelist = Array.isArray(adminCfg.whitelist) ? adminCfg.whitelist : [];
+            const tgUser = cfg.telegram_username || "";
+            const chLink = cfg.channel_link || "";
+
+            const wlChips = whitelist.map((u) => `
+                <span class="admin-chip">
+                    @${sanitize(u)}
+                    <button class="admin-chip-remove" data-user="${sanitize(u)}" type="button" title="Retirer">×</button>
+                </span>
+            `).join("");
+
+            const html = `
+                <div class="admin-settings-card">
+                    <div class="admin-settings-card-title">🏪 Infos de la Boutique</div>
+                    <form id="admin-form-settings" autocomplete="off">
+                        <label class="admin-label">Nom de l'établissement
+                            <input class="admin-input" id="as-name" type="text" value="${sanitize(rest.name || '')}" required>
+                        </label>
+                        <label class="admin-label">Slogan / Sous-titre
+                            <input class="admin-input" id="as-slogan" type="text" value="${sanitize(rest.slogan || '')}">
+                        </label>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                            <label class="admin-label">Devise
+                                <input class="admin-input" id="as-currency" type="text" value="${sanitize(rest.currency || 'EUR')}">
+                            </label>
+                            <label class="admin-label">Commande min (€)
+                                <input class="admin-input" id="as-minorder" type="number" step="0.01" value="${rest.minOrder || 0}">
+                            </label>
+                        </div>
+                        <label class="admin-label">Frais de livraison (€)
+                            <input class="admin-input" id="as-deliveryfee" type="number" step="0.01" value="${rest.deliveryFee || 0}">
+                        </label>
+                        <button class="admin-form-submit" type="submit">💾 Enregistrer les infos</button>
+                    </form>
+                </div>
+
+                <div class="admin-settings-card">
+                    <div class="admin-settings-card-title">✈️ Telegram & Contacts</div>
+                    <form id="admin-form-contact" autocomplete="off">
+                        <label class="admin-label">Username Telegram (Sans @)
+                            <input class="admin-input" id="as-tg-username" type="text" value="${sanitize(tgUser)}">
+                        </label>
+                        <label class="admin-label">Lien du Canal Telegram
+                            <input class="admin-input" id="as-channel-link" type="text" value="${sanitize(chLink)}">
+                        </label>
+                        <button class="admin-form-submit" type="submit">💾 Enregistrer les contacts</button>
+                    </form>
+                </div>
+
+                <div class="admin-settings-card">
+                    <div class="admin-settings-card-title">🛡️ Administrateurs Autorisés (Whitelist)</div>
+                    <p class="admin-hint">Seuls les utilisateurs listés ici ont accès à ce panneau de gestion.</p>
+                    <div class="admin-whitelist-chips">
+                        ${wlChips || '<span class="admin-hint">Aucun admin supplémentaire</span>'}
+                    </div>
+                    <form id="admin-form-whitelist" style="margin-top:10px;" autocomplete="off">
+                        <div style="display:flex;gap:8px;">
+                            <input class="admin-input" id="as-new-admin" type="text" placeholder="Username Telegram">
+                            <button class="admin-add-btn" style="margin-bottom:0;width:auto;white-space:nowrap;padding:0 16px;" type="submit">+ Ajouter</button>
+                        </div>
+                    </form>
+                </div>
+            `;
+
+            els.adminSettingsContent.innerHTML = html;
+
+            document.getElementById("admin-form-settings").addEventListener("submit", async (e) => {
+                e.preventDefault();
+                const settingsData = {
+                    name: document.getElementById("as-name").value.trim(),
+                    slogan: document.getElementById("as-slogan").value.trim(),
+                    currency: document.getElementById("as-currency").value.trim(),
+                    minOrder: parseFloat(document.getElementById("as-minorder").value) || 0,
+                    deliveryFee: parseFloat(document.getElementById("as-deliveryfee").value) || 0,
+                };
+                await adminSaveSettings(settingsData);
+            });
+
+            document.getElementById("admin-form-contact").addEventListener("submit", async (e) => {
+                e.preventDefault();
+                const contactData = {
+                    telegram_username: document.getElementById("as-tg-username").value.trim().replace(/^@/, ""),
+                    channel_link: document.getElementById("as-channel-link").value.trim(),
+                };
+                await adminSaveContact(contactData);
+            });
+
+            document.getElementById("admin-form-whitelist").addEventListener("submit", async (e) => {
+                e.preventDefault();
+                const input = document.getElementById("as-new-admin");
+                const newUsername = input.value.trim().replace(/^@/, "");
+                if (!newUsername) return;
+                const currentWL = Array.isArray(cfg.admin && cfg.admin.whitelist) ? [...cfg.admin.whitelist] : [];
+                if (!currentWL.includes(newUsername)) {
+                    currentWL.push(newUsername);
+                    await adminSaveWhitelist(currentWL);
+                }
+            });
+
+            els.adminSettingsContent.querySelectorAll(".admin-chip-remove").forEach((btn) => {
+                btn.addEventListener("click", async () => {
+                    const toRemove = btn.dataset.user;
+                    const currentWL = Array.isArray(cfg.admin && cfg.admin.whitelist) ? [...cfg.admin.whitelist] : [];
+                    const updatedWL = currentWL.filter((u) => u !== toRemove);
+                    await adminSaveWhitelist(updatedWL);
+                });
+            });
+
+        } catch (_) {
+            els.adminSettingsContent.innerHTML = `<div class="admin-empty">Impossible de charger les paramètres.</div>`;
+        }
+    }
+
+    async function adminSaveSettings(settings) {
+        try {
+            const resp = await fetchWriteApi("/admin/settings/save", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ tg_username: getAdminUsername(), settings })
+            }, true);
+            const data = await readJsonIfAny(resp);
+            if (resp.ok && (!data || data.success !== false)) {
+                showToast("Paramètres sauvegardés ! ⚙️");
+                await loadConfig();
+                renderUser();
+            } else {
+                alert((data && data.error) || "Erreur lors de la sauvegarde.");
+            }
+        } catch (_) {
+            alert("Erreur de connexion.");
+        }
+    }
+
+    async function adminSaveContact(contact) {
+        try {
+            const resp = await fetchWriteApi("/admin/contact/save", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ tg_username: getAdminUsername(), contact })
+            }, true);
+            const data = await readJsonIfAny(resp);
+            if (resp.ok && (!data || data.success !== false)) {
+                showToast("Contacts mis à jour ! 📱");
+                await loadConfig();
+            } else {
+                alert((data && data.error) || "Erreur lors de la sauvegarde.");
+            }
+        } catch (_) {
+            alert("Erreur de connexion.");
+        }
+    }
+
+    async function adminSaveWhitelist(whitelist) {
+        try {
+            const resp = await fetchWriteApi("/admin/whitelist/save", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ tg_username: getAdminUsername(), whitelist })
+            }, true);
+            const data = await readJsonIfAny(resp);
+            if (resp.ok && (!data || data.success !== false)) {
+                showToast("Liste des admins mise à jour ! 🛡️");
+                await loadConfig();
+                await loadAdminSettings();
+            } else {
+                alert((data && data.error) || "Erreur lors de la sauvegarde.");
+            }
+        } catch (_) {
+            alert("Erreur de connexion.");
         }
     }
 
