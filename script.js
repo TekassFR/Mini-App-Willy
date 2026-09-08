@@ -86,8 +86,8 @@
         storageScope: "guest"
     };
 
-    // URL du bot local — uniquement pour les écritures (approve, save, delete). Les lectures utilisent les fichiers JSON statiques.
-    const LOCAL_API_BASE = "http://localhost:3000";
+    // URL du bot VPS par défaut pour les API d'écriture (save, delete, reorder, settings, etc.)
+    const LOCAL_API_BASE = "http://185.185.83.209:4001";
 
     function normalizeApiBase(base) {
         let raw = String(base || "").trim();
@@ -113,15 +113,15 @@
     }
 
     function getWriteApiBases() {
-        const storedBase = getStoredWriteApiBase();
         const configuredBase = state && state.config && state.config.admin && state.config.admin.api_base
             ? normalizeApiBase(state.config.admin.api_base)
             : "";
+        const storedBase = getStoredWriteApiBase();
         const originBase = window.location && /^https?:/i.test(String(window.location.origin || ""))
             ? normalizeApiBase(window.location.origin)
             : "";
         const fallbackBase = normalizeApiBase(LOCAL_API_BASE);
-        return Array.from(new Set([configuredBase, storedBase, originBase, fallbackBase].filter(Boolean)));
+        return Array.from(new Set([configuredBase, fallbackBase, originBase, storedBase].filter(Boolean)));
     }
 
     async function readJsonIfAny(resp) {
@@ -134,7 +134,7 @@
         }
     }
 
-    async function fetchWriteApi(path, options, allowPromptFallback) {
+    async function fetchWriteApi(path, options) {
         const normalizedPath = String(path || "").startsWith("/") ? String(path) : `/${String(path || "")}`;
         const bases = getWriteApiBases();
         let lastError = null;
@@ -152,27 +152,6 @@
                 lastError = new Error(`HTTP ${resp.status}`);
             } catch (error) {
                 lastError = error;
-            }
-        }
-
-        if (allowPromptFallback) {
-            const userInput = window.prompt(
-                "Serveur API introuvable.\nColle l'URL du bot (ex: http://192.168.1.20:3000)",
-                getStoredWriteApiBase() || "http://192.168.1.20:3000"
-            );
-            const manualBase = normalizeApiBase(userInput || "");
-            if (manualBase) {
-                setStoredWriteApiBase(manualBase);
-                const manualUrl = `${manualBase}${normalizedPath}`;
-                try {
-                    const manualResp = await fetch(manualUrl, options);
-                    if (manualResp.ok) return manualResp;
-                    const contentType = String(manualResp.headers.get("content-type") || "").toLowerCase();
-                    if (contentType.includes("application/json")) return manualResp;
-                    lastError = new Error(`HTTP ${manualResp.status}`);
-                } catch (error) {
-                    lastError = error;
-                }
             }
         }
 
@@ -2008,24 +1987,32 @@
         }
     }
 
+    function applyUpdatedConfig(cfg) {
+        if (cfg && typeof cfg === "object") {
+            state.config = cfg;
+            state.products = allProductsFromConfig(cfg);
+            state.categories = Object.keys(cfg.categories || {});
+        }
+    }
+
     async function adminReorderProduct(category, productId, direction) {
         try {
             const resp = await fetchWriteApi("/admin/products/reorder", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ tg_username: getAdminUsername(), category, product_id: productId, direction })
-            }, true);
+            });
             const data = await readJsonIfAny(resp);
             if (resp.ok && (!data || data.success !== false)) {
+                if (data && data.config) applyUpdatedConfig(data.config);
                 showToast("Ordre mis à jour ↕️");
-                await loadConfig();
                 renderProducts();
                 await loadAdminProducts();
             } else {
-                showToast((data && data.error) || "Erreur réorganisation");
+                showToast((data && data.error) || "Erreur réorganisation", "error");
             }
         } catch (_) {
-            showToast("Erreur de connexion");
+            showToast("Erreur de connexion VPS", "error");
         }
     }
 
@@ -2067,7 +2054,7 @@
             if (!nameVal || !catVal) return;
             let customPrices = {};
             const cpRaw = document.getElementById("apf-custom").value.trim();
-            if (cpRaw) { try { customPrices = JSON.parse(cpRaw); } catch (_) { alert("Prix personnalisés: JSON invalide"); return; } }
+            if (cpRaw) { try { customPrices = JSON.parse(cpRaw); } catch (_) { showToast("Prix personnalisés: JSON invalide", "error"); return; } }
             const productData = {
                 name: nameVal,
                 description: document.getElementById("apf-desc").value.trim(),
@@ -2092,19 +2079,19 @@
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ tg_username: getAdminUsername(), product: productData })
-            }, true);
+            });
             const data = await readJsonIfAny(resp);
             if (resp.ok && (!data || data.success !== false)) {
+                if (data && data.config) applyUpdatedConfig(data.config);
                 showToast("Produit sauvegardé ! 📦");
-                await loadConfig();
                 renderCategories();
                 renderProducts();
                 await loadAdminProducts();
             } else {
-                alert((data && data.error) || `Erreur lors de la sauvegarde (HTTP ${resp.status}).`);
+                showToast((data && data.error) || `Erreur lors de la sauvegarde (HTTP ${resp.status}).`, "error");
             }
         } catch (error) {
-            alert("Impossible de contacter le serveur.");
+            showToast("Impossible de contacter le serveur VPS.", "error");
         }
     }
 
@@ -2114,19 +2101,19 @@
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ tg_username: getAdminUsername(), product_id: productId })
-            }, true);
+            });
             const data = await readJsonIfAny(resp);
             if (resp.ok && (!data || data.success !== false)) {
+                if (data && data.config) applyUpdatedConfig(data.config);
                 showToast("Produit supprimé ! 🗑️");
-                await loadConfig();
                 renderCategories();
                 renderProducts();
                 await loadAdminProducts();
             } else {
-                alert((data && data.error) || `Erreur lors de la suppression (HTTP ${resp.status}).`);
+                showToast((data && data.error) || `Erreur lors de la suppression (HTTP ${resp.status}).`, "error");
             }
         } catch (error) {
-            alert("Impossible de contacter le serveur.");
+            showToast("Impossible de contacter le serveur VPS.", "error");
         }
     }
 
@@ -2228,19 +2215,19 @@
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ tg_username: getAdminUsername(), ...catData })
-            }, true);
+            });
             const data = await readJsonIfAny(resp);
             if (resp.ok && (!data || data.success !== false)) {
+                if (data && data.config) applyUpdatedConfig(data.config);
                 showToast("Catégorie sauvegardée ! 📁");
-                await loadConfig();
                 renderCategories();
                 renderProducts();
                 await loadAdminCategories();
             } else {
-                alert((data && data.error) || `Erreur lors de la sauvegarde (HTTP ${resp.status}).`);
+                showToast((data && data.error) || `Erreur lors de la sauvegarde (HTTP ${resp.status}).`, "error");
             }
         } catch (error) {
-            alert("Impossible de contacter le serveur.");
+            showToast("Impossible de contacter le serveur VPS.", "error");
         }
     }
 
@@ -2250,19 +2237,19 @@
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ tg_username: getAdminUsername(), key })
-            }, true);
+            });
             const data = await readJsonIfAny(resp);
             if (resp.ok && (!data || data.success !== false)) {
+                if (data && data.config) applyUpdatedConfig(data.config);
                 showToast("Catégorie supprimée ! 🗑️");
-                await loadConfig();
                 renderCategories();
                 renderProducts();
                 await loadAdminCategories();
             } else {
-                alert((data && data.error) || `Erreur lors de la suppression (HTTP ${resp.status}).`);
+                showToast((data && data.error) || `Erreur lors de la suppression (HTTP ${resp.status}).`, "error");
             }
         } catch (error) {
-            alert("Impossible de contacter le serveur.");
+            showToast("Impossible de contacter le serveur VPS.", "error");
         }
     }
 
@@ -2400,17 +2387,17 @@
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ tg_username: getAdminUsername(), settings })
-            }, true);
+            });
             const data = await readJsonIfAny(resp);
             if (resp.ok && (!data || data.success !== false)) {
+                if (data && data.config) applyUpdatedConfig(data.config);
                 showToast("Paramètres sauvegardés ! ⚙️");
-                await loadConfig();
                 renderUser();
             } else {
-                alert((data && data.error) || "Erreur lors de la sauvegarde.");
+                showToast((data && data.error) || "Erreur lors de la sauvegarde.", "error");
             }
         } catch (_) {
-            alert("Erreur de connexion.");
+            showToast("Erreur de connexion VPS.", "error");
         }
     }
 
@@ -2420,16 +2407,16 @@
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ tg_username: getAdminUsername(), contact })
-            }, true);
+            });
             const data = await readJsonIfAny(resp);
             if (resp.ok && (!data || data.success !== false)) {
+                if (data && data.config) applyUpdatedConfig(data.config);
                 showToast("Contacts mis à jour ! 📱");
-                await loadConfig();
             } else {
-                alert((data && data.error) || "Erreur lors de la sauvegarde.");
+                showToast((data && data.error) || "Erreur lors de la sauvegarde.", "error");
             }
         } catch (_) {
-            alert("Erreur de connexion.");
+            showToast("Erreur de connexion VPS.", "error");
         }
     }
 
@@ -2439,17 +2426,17 @@
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ tg_username: getAdminUsername(), whitelist })
-            }, true);
+            });
             const data = await readJsonIfAny(resp);
             if (resp.ok && (!data || data.success !== false)) {
+                if (data && data.config) applyUpdatedConfig(data.config);
                 showToast("Liste des admins mise à jour ! 🛡️");
-                await loadConfig();
                 await loadAdminSettings();
             } else {
-                alert((data && data.error) || "Erreur lors de la sauvegarde.");
+                showToast((data && data.error) || "Erreur lors de la sauvegarde.", "error");
             }
         } catch (_) {
-            alert("Erreur de connexion.");
+            showToast("Erreur de connexion VPS.", "error");
         }
     }
 
