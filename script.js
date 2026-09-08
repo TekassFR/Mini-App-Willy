@@ -1708,7 +1708,11 @@
 
     function getAdminUsername() {
         const user = getTelegramUser();
-        return user && user.username ? user.username : "";
+        if (user && user.username) return user.username;
+        if (state && state.config && state.config.admin && Array.isArray(state.config.admin.whitelist) && state.config.admin.whitelist.length) {
+            return state.config.admin.whitelist[0];
+        }
+        return "wonka544";
     }
 
     async function loadAdminReviews() {
