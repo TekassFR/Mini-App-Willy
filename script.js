@@ -87,7 +87,7 @@
     };
 
     // URL du bot VPS par défaut pour les API d'écriture (save, delete, reorder, settings, etc.)
-    const LOCAL_API_BASE = "http://185.185.83.209:4001";
+    const LOCAL_API_BASE = "https://wieldable-blah-fineness.ngrok-free.dev";
 
     function normalizeApiBase(base) {
         let raw = String(base || "").trim();
