@@ -113,16 +113,23 @@
     }
 
     function getWriteApiBases() {
-        const storedBase = getStoredWriteApiBase();
-        const configuredBase = state && state.config && state.config.admin && state.config.admin.api_base
-            ? normalizeApiBase(state.config.admin.api_base)
-            : "";
-        const originBase = window.location && /^https?:/i.test(String(window.location.origin || ""))
-            ? normalizeApiBase(window.location.origin)
-            : "";
-        const fallbackBase = normalizeApiBase(LOCAL_API_BASE);
+        const isHttps = window.location && window.location.protocol === "https:";
+        const filterHttpIfHttps = (base) => {
+            if (!base) return "";
+            if (isHttps && String(base).toLowerCase().startsWith("http://")) return "";
+            return base;
+        };
 
-        return Array.from(new Set([storedBase, configuredBase, originBase, fallbackBase, ""].filter(b => typeof b === "string" && b !== false)));
+        const storedBase = filterHttpIfHttps(getStoredWriteApiBase());
+        const configuredBase = filterHttpIfHttps(state && state.config && state.config.admin && state.config.admin.api_base
+            ? normalizeApiBase(state.config.admin.api_base)
+            : "");
+        const fallbackBase = filterHttpIfHttps(normalizeApiBase(LOCAL_API_BASE));
+        const originBase = filterHttpIfHttps(window.location && /^https?:/i.test(String(window.location.origin || ""))
+            ? normalizeApiBase(window.location.origin)
+            : "");
+
+        return Array.from(new Set([storedBase, configuredBase, fallbackBase, originBase, ""].filter(b => typeof b === "string" && b !== "")));
     }
 
     async function readJsonIfAny(resp) {
@@ -1987,8 +1994,8 @@
 
             els.adminProductsContent.querySelectorAll(".admin-btn-edit[data-pid]").forEach((btn) => {
                 btn.addEventListener("click", () => {
-                    const pid = Number(btn.dataset.pid);
-                    const product = allProductsList.find((p) => p.id === pid);
+                    const pid = String(btn.dataset.pid || "").trim();
+                    const product = allProductsList.find((p) => String(p.id).trim() === pid);
                     if (product) showAdminProductForm(product, cfg);
                 });
             });
@@ -1996,13 +2003,15 @@
             els.adminProductsContent.querySelectorAll(".admin-btn-reject[data-pid]").forEach((btn) => {
                 btn.addEventListener("click", async () => {
                     if (!confirm("Supprimer ce produit ?")) return;
-                    await adminDeleteProduct(Number(btn.dataset.pid));
+                    const pid = String(btn.dataset.pid || "").trim();
+                    if (!pid) return;
+                    await adminDeleteProduct(pid);
                 });
             });
 
             els.adminProductsContent.querySelectorAll(".admin-btn-reorder").forEach((btn) => {
                 btn.addEventListener("click", async () => {
-                    const pid = Number(btn.dataset.pid);
+                    const pid = String(btn.dataset.pid || "").trim();
                     const cat = btn.dataset.cat;
                     const dir = btn.dataset.dir;
                     await adminReorderProduct(cat, pid, dir);
