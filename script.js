@@ -122,22 +122,7 @@
             : "";
         const fallbackBase = normalizeApiBase(LOCAL_API_BASE);
 
-        const rawList = [storedBase, configuredBase, originBase, fallbackBase, ""];
-        const expandedList = [];
-        const isHttpsPage = window.location && window.location.protocol === "https:";
-
-        for (const b of rawList) {
-            if (b === "") {
-                expandedList.push("");
-                continue;
-            }
-            if (!b) continue;
-            expandedList.push(b);
-            if (isHttpsPage && b.startsWith("http://")) {
-                expandedList.push(b.replace(/^http:\/\//i, "https://"));
-            }
-        }
-        return Array.from(new Set(expandedList));
+        return Array.from(new Set([storedBase, configuredBase, originBase, fallbackBase, ""].filter(b => typeof b === "string" && b !== false)));
     }
 
     async function readJsonIfAny(resp) {
