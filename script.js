@@ -113,15 +113,31 @@
     }
 
     function getWriteApiBases() {
+        const storedBase = getStoredWriteApiBase();
         const configuredBase = state && state.config && state.config.admin && state.config.admin.api_base
             ? normalizeApiBase(state.config.admin.api_base)
             : "";
-        const storedBase = getStoredWriteApiBase();
         const originBase = window.location && /^https?:/i.test(String(window.location.origin || ""))
             ? normalizeApiBase(window.location.origin)
             : "";
         const fallbackBase = normalizeApiBase(LOCAL_API_BASE);
-        return Array.from(new Set([configuredBase, fallbackBase, originBase, storedBase].filter(Boolean)));
+
+        const rawList = [storedBase, configuredBase, originBase, fallbackBase, ""];
+        const expandedList = [];
+        const isHttpsPage = window.location && window.location.protocol === "https:";
+
+        for (const b of rawList) {
+            if (b === "") {
+                expandedList.push("");
+                continue;
+            }
+            if (!b) continue;
+            expandedList.push(b);
+            if (isHttpsPage && b.startsWith("http://")) {
+                expandedList.push(b.replace(/^http:\/\//i, "https://"));
+            }
+        }
+        return Array.from(new Set(expandedList));
     }
 
     async function readJsonIfAny(resp) {
@@ -2318,6 +2334,17 @@
                 </div>
 
                 <div class="admin-settings-card">
+                    <div class="admin-settings-card-title">🌐 URL du Serveur VPS (API)</div>
+                    <p class="admin-hint">Indiquez l'URL de votre serveur VPS (ex: http://185.185.83.209:4001 ou votre lien HTTPS / Ngrok si hébergé sur Vercel).</p>
+                    <form id="admin-form-api-url" autocomplete="off">
+                        <label class="admin-label">URL API Server
+                            <input class="admin-input" id="as-api-url" type="text" value="${sanitize(getStoredWriteApiBase() || (adminCfg && adminCfg.api_base) || LOCAL_API_BASE)}" placeholder="http://185.185.83.209:4001">
+                        </label>
+                        <button class="admin-form-submit" type="submit">💾 Enregistrer l'URL API</button>
+                    </form>
+                </div>
+
+                <div class="admin-settings-card">
                     <div class="admin-settings-card-title">🛡️ Administrateurs Autorisés (Whitelist)</div>
                     <p class="admin-hint">Seuls les utilisateurs listés ici ont accès à ce panneau de gestion.</p>
                     <div class="admin-whitelist-chips">
@@ -2333,6 +2360,15 @@
             `;
 
             els.adminSettingsContent.innerHTML = html;
+
+            document.getElementById("admin-form-api-url").addEventListener("submit", async (e) => {
+                e.preventDefault();
+                const newUrl = document.getElementById("as-api-url").value.trim();
+                if (!newUrl) return;
+                setStoredWriteApiBase(newUrl);
+                showToast("URL API enregistrée ! 🌐");
+                await adminSaveContact({ api_base: newUrl });
+            });
 
             document.getElementById("admin-form-settings").addEventListener("submit", async (e) => {
                 e.preventDefault();
