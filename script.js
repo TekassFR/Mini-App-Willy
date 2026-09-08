@@ -732,9 +732,31 @@
     }
 
     async function loadConfig() {
-        const resp = await fetch(`./config.json?t=${Date.now()}`);
-        if (!resp.ok) throw new Error("config.json introuvable");
-        const cfg = await resp.json();
+        const bases = getWriteApiBases();
+        let cfg = null;
+
+        // 1. Essayer de charger la configuration LIVE en direct depuis le serveur VPS
+        for (const base of bases) {
+            if (!base) continue;
+            try {
+                const resp = await fetch(`${base}/config?t=${Date.now()}`, { cache: "no-store" });
+                if (resp.ok) {
+                    const data = await resp.json();
+                    if (data && typeof data === "object" && (data.products || data.categories || data.restaurant)) {
+                        cfg = data;
+                        break;
+                    }
+                }
+            } catch (_) {}
+        }
+
+        // 2. Fallback sur le fichier statique local si le VPS n'est pas joignable
+        if (!cfg) {
+            const resp = await fetch(`./config.json?t=${Date.now()}`, { cache: "no-store" });
+            if (!resp.ok) throw new Error("config.json introuvable");
+            cfg = await resp.json();
+        }
+
         state.config = cfg;
         if (cfg && cfg.admin && cfg.admin.api_base) {
             setStoredWriteApiBase(cfg.admin.api_base);
