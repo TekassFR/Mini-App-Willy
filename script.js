@@ -142,6 +142,22 @@
         }
     }
 
+    async function fetchWithTimeout(url, options = {}, timeoutMs = 4000) {
+        const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
+        const timer = controller ? setTimeout(() => controller.abort(), timeoutMs) : null;
+        const reqHeaders = Object.assign({ "ngrok-skip-browser-warning": "69420" }, (options && options.headers) || {});
+        const reqOpts = Object.assign({}, options || {}, { headers: reqHeaders });
+        if (controller) reqOpts.signal = controller.signal;
+        try {
+            const response = await fetch(url, reqOpts);
+            if (timer) clearTimeout(timer);
+            return response;
+        } catch (err) {
+            if (timer) clearTimeout(timer);
+            throw err;
+        }
+    }
+
     async function fetchWriteApi(path, options) {
         const normalizedPath = String(path || "").startsWith("/") ? String(path) : `/${String(path || "")}`;
         const bases = getWriteApiBases();
@@ -150,7 +166,7 @@
         for (const base of bases) {
             const url = `${base}${normalizedPath}`;
             try {
-                const resp = await fetch(url, options);
+                const resp = await fetchWithTimeout(url, options, 6000);
                 if (resp.ok) return resp;
 
                 // Si le serveur répond en JSON (même en erreur), on renvoie la réponse
@@ -710,10 +726,20 @@
 
     async function syncReviewsFromLocalApi() {
         try {
-            const resp = await fetch(`./reviews.json?t=${Date.now()}`, { cache: "no-store" });
+            const resp = await fetchWriteApi("/reviews", { method: "GET" });
+            if (resp.ok) {
+                const data = await resp.json();
+                if (data && data.success && Array.isArray(data.reviews)) {
+                    state.reviews = data.reviews.map(normalizeReviewEntry).filter(Boolean);
+                    saveLocal();
+                    return true;
+                }
+            }
+        } catch (_) {}
+        try {
+            const resp = await fetchWithTimeout(`./reviews.json?t=${Date.now()}`, { cache: "no-store" }, 3000);
             if (!resp.ok) return false;
             const data = await resp.json();
-            // Supporte l'ancien format (tableau plat) et le nouveau {pending, approved}
             const list = Array.isArray(data) ? data : (Array.isArray(data.approved) ? data.approved : null);
             if (!list) return false;
             const normalized = list.map(normalizeReviewEntry).filter(Boolean);
@@ -746,7 +772,7 @@
         for (const base of bases) {
             if (!base) continue;
             try {
-                const resp = await fetch(`${base}/config?t=${Date.now()}`, { cache: "no-store" });
+                const resp = await fetchWithTimeout(`${base}/config?t=${Date.now()}`, { cache: "no-store" }, 4000);
                 if (resp.ok) {
                     const data = await resp.json();
                     if (data && typeof data === "object" && (data.products || data.categories || data.restaurant)) {
@@ -766,7 +792,7 @@
             }
             // Premier chargement uniquement - fallback sur fichier statique
             try {
-                const resp = await fetch(`./config.json?t=${Date.now()}`, { cache: "no-store" });
+                const resp = await fetchWithTimeout(`./config.json?t=${Date.now()}`, { cache: "no-store" }, 3000);
                 if (resp.ok) cfg = await resp.json();
             } catch (_) {}
             if (!cfg) throw new Error("Impossible de charger la configuration (VPS inaccessible)");
