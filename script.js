@@ -1966,24 +1966,40 @@
 
     async function loadAdminOrders() {
         if (!els.adminOrdersAll) return;
-        els.adminOrdersAll.innerHTML = `<div class="admin-empty">Chargement...</div>`;
+        els.adminOrdersAll.innerHTML = `<div class="admin-empty">Chargement des commandes...</div>`;
         try {
-            const resp = await fetch(`./orders.json?t=${Date.now()}`, { cache: "no-store" });
-            if (!resp.ok) {
-                els.adminOrdersAll.innerHTML = `<div class="admin-empty">Aucune commande enregistrée.</div>`;
-                return;
+            let orders = [];
+            try {
+                const resp = await fetchWriteApi("/admin/orders?tg_username=" + encodeURIComponent(getAdminUsername()));
+                if (resp && resp.ok) {
+                    const data = await resp.json();
+                    if (data && Array.isArray(data.orders)) {
+                        orders = data.orders;
+                    }
+                }
+            } catch (_) {}
+
+            if (!orders.length) {
+                try {
+                    const resp = await fetch(`./orders.json?t=${Date.now()}`, { cache: "no-store" });
+                    if (resp && resp.ok) {
+                        const data = await resp.json();
+                        if (Array.isArray(data)) orders = data;
+                    }
+                } catch (_) {}
             }
-            const data = await resp.json();
-            const orders = Array.isArray(data) ? [...data].reverse() : [];
+
             if (!orders.length) {
                 els.adminOrdersAll.innerHTML = `<div class="admin-empty">Aucune commande enregistrée.</div>`;
                 return;
             }
+
+            const sortedOrders = [...orders].reverse();
             els.adminOrdersAll.innerHTML = `<button class="admin-refresh-btn" id="admin-orders-refresh-btn" type="button">↻ Actualiser</button>` +
-                orders.map((o) => {
+                sortedOrders.map((o) => {
                     const date = new Date(o.timestamp || Date.now()).toLocaleString("fr-FR");
                     const typeLabel = o.type === "pickup" ? "Sur place" : "Livraison";
-                    const user = o.telegramUsername ? `@${sanitize(o.telegramUsername)}` : (o.telegramUserId ? `ID ${o.telegramUserId}` : "Anonyme");
+                    const user = o.telegramUsername || o.telegram_username ? `@${sanitize(o.telegramUsername || o.telegram_username)}` : (o.telegramUserId || o.telegram_user_id ? `ID ${o.telegramUserId || o.telegram_user_id}` : "Anonyme");
                     return `
                         <div class="admin-order-card">
                             <div class="admin-order-header">
