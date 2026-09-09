@@ -2090,42 +2090,33 @@
         }
     }
 
-    async function handleAdminFileUpload(fileInputEl, targetUrlInputId, statusElId) {
+    function handleAdminFileUpload(fileInputEl, targetUrlInputId, statusElId) {
         const file = fileInputEl.files && fileInputEl.files[0];
         if (!file) return;
+
         const statusEl = document.getElementById(statusElId);
-        if (statusEl) statusEl.textContent = "⏳ Envoi en cours...";
+        if (statusEl) statusEl.textContent = "⏳ Traitement du fichier...";
 
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("tg_username", getAdminUsername());
-
-        try {
-            const resp = await fetchWriteApi("/admin/upload", {
-                method: "POST",
-                body: formData
-            });
-            const data = await readJsonIfAny(resp);
-            if (resp.ok && data && data.url) {
-                let fullUrl = data.url;
-                if (fullUrl.startsWith("/")) {
-                    const bases = getWriteApiBases();
-                    const base = bases.find(b => b.startsWith("http")) || "";
-                    fullUrl = `${base}${fullUrl}`;
-                }
-                const targetInput = document.getElementById(targetUrlInputId);
-                if (targetInput) targetInput.value = fullUrl;
-                if (statusEl) statusEl.textContent = "✅ Fichier prêt !";
-                showToast("Fichier téléversé avec succès ! 🚀");
-            } else {
-                const err = (data && data.error) || `Erreur HTTP ${resp.status}`;
-                if (statusEl) statusEl.textContent = `❌ ${err}`;
-                showToast(err, "error");
-            }
-        } catch (_) {
-            if (statusEl) statusEl.textContent = "❌ Échec de l'envoi.";
-            showToast("Impossible d'envoyer le fichier au VPS", "error");
+        if (file.size > 25 * 1024 * 1024) {
+            if (statusEl) statusEl.textContent = "❌ Fichier trop lourd (max 25 Mo)";
+            showToast("Le fichier dépasse 25 Mo", "error");
+            return;
         }
+
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            const dataUrl = e.target.result;
+            const targetInput = document.getElementById(targetUrlInputId);
+            if (targetInput) targetInput.value = dataUrl;
+            if (statusEl) statusEl.textContent = "✅ Fichier prêt !";
+            showToast("Photo/Vidéo chargée avec succès ! 🚀");
+        };
+        reader.onerror = function () {
+            if (statusEl) statusEl.textContent = "❌ Erreur de lecture";
+            showToast("Impossible de lire le fichier", "error");
+        };
+
+        reader.readAsDataURL(file);
     }
 
     function showAdminProductForm(product, cfg) {
