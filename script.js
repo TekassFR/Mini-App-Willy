@@ -2144,32 +2144,28 @@
         }
     }
 
-    // Upload via API Vercel → Catbox.moe (retourne une vraie URL publique)
-    async function uploadFileToCloud(dataUri, filename, statusEl) {
-        const vercelOrigin = (window.location && /^https?:/i.test(String(window.location.origin || "")))
-            ? String(window.location.origin).replace(/\/+$/, "")
-            : "";
+    // Upload DIRECT vers Catbox.moe depuis le navigateur (FormData + Blob)
+    // Pas de base64, pas de limite Vercel, supporte images ET vidéos de grande taille
+    async function uploadToCatboxDirect(fileOrBlob, filename) {
+        const formData = new FormData();
+        formData.append("reqtype", "fileupload");
+        formData.append("userhash", ""); // upload anonyme
+        formData.append("fileToUpload", fileOrBlob, filename);
 
-        // Essayer VPS d'abord, puis Vercel
-        const uploadBases = [].concat(getWriteApiBases(), vercelOrigin ? [vercelOrigin] : []).filter(Boolean);
-
-        for (const base of uploadBases) {
-            try {
-                const resp = await fetchWithTimeout(`${base}/admin/upload`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ data: dataUri, filename, tg_username: getAdminUsername() })
-                }, 30000);
-                if (resp.ok) {
-                    const data = await resp.json();
-                    if (data && data.success && data.url) return data.url;
-                }
-            } catch (_) {}
+        try {
+            const resp = await fetch("https://catbox.moe/user.php", {
+                method: "POST",
+                body: formData
+            });
+            if (!resp.ok) return null;
+            const text = (await resp.text()).trim();
+            return text.startsWith("https://") ? text : null;
+        } catch (_) {
+            return null;
         }
-        return null; // fallback: garder le data URI
     }
 
-    function handleAdminFileUpload(fileInputEl, targetUrlInputId, statusElId) {
+    async function handleAdminFileUpload(fileInputEl, targetUrlInputId, statusElId) {
         const file = fileInputEl.files && fileInputEl.files[0];
         if (!file) return;
 
@@ -2189,7 +2185,7 @@
         const isVideoFile = file.type && file.type.startsWith("video/");
 
         if (isImageTarget || (isImageFile && !isVideoTarget)) {
-            // ── IMAGE : compression Canvas → JPEG → upload Catbox ──────────
+            // ── IMAGE : Canvas → JPEG Blob → upload direct Catbox ──────────
             const img = new Image();
             const blobUrl = URL.createObjectURL(file);
 
@@ -2205,79 +2201,59 @@
                 canvas.getContext("2d").drawImage(img, 0, 0, w, h);
                 URL.revokeObjectURL(blobUrl);
 
-                const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
                 if (statusEl) statusEl.textContent = "⏳ Upload en cours...";
 
-                const cloudUrl = await uploadFileToCloud(dataUrl, `photo_${Date.now()}.jpg`, statusEl);
-                const targetInput = document.getElementById(targetUrlInputId);
-                if (cloudUrl) {
-                    if (targetInput) targetInput.value = cloudUrl;
-                    if (statusEl) statusEl.textContent = "✅ Photo uploadée !";
-                    showToast("Photo hébergée en ligne ! 🚀");
-                } else {
-                    // Fallback : stocker le data URI localement
-                    if (targetInput) targetInput.value = dataUrl;
-                    if (statusEl) statusEl.textContent = "✅ Photo prête (locale)";
-                    showToast("Photo prête ! (hébergement indisponible)");
-                }
-            };
-
-            img.onerror = function () {
-                // HEIC ou format non supporté par le canvas → lire le raw et tenter l'upload
-                URL.revokeObjectURL(blobUrl);
-                if (statusEl) statusEl.textContent = "⏳ Conversion en cours...";
-                const reader = new FileReader();
-                reader.onload = async function (e) {
-                    const dataUrl = String(e.target.result || "");
-                    // Essayer d'uploader le fichier brut (catbox peut gérer HEIC)
-                    const cloudUrl = await uploadFileToCloud(dataUrl, `photo_${Date.now()}.jpg`, statusEl);
+                // Convertir canvas en Blob JPEG puis upload direct Catbox
+                canvas.toBlob(async function (blob) {
+                    const cloudUrl = await uploadToCatboxDirect(blob, `photo_${Date.now()}.jpg`);
                     const targetInput = document.getElementById(targetUrlInputId);
                     if (cloudUrl) {
                         if (targetInput) targetInput.value = cloudUrl;
                         if (statusEl) statusEl.textContent = "✅ Photo uploadée !";
-                        showToast("Photo hébergée ! 🚀");
+                        showToast("Photo hébergée en ligne ! 🚀");
                     } else {
-                        if (statusEl) statusEl.textContent = "❌ Format non supporté — utilise JPEG/PNG";
-                        showToast("Format non supporté. Prends une capture d'écran.", "error");
+                        // Fallback : data URI local
+                        const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+                        if (targetInput) targetInput.value = dataUrl;
+                        if (statusEl) statusEl.textContent = "✅ Photo prête (locale)";
+                        showToast("Photo prête ! (hébergement indisponible)");
                     }
-                };
-                reader.onerror = function () {
-                    if (statusEl) statusEl.textContent = "❌ Erreur de lecture";
-                    showToast("Impossible de lire le fichier", "error");
-                };
-                reader.readAsDataURL(file);
+                }, "image/jpeg", 0.85);
+            };
+
+            img.onerror = async function () {
+                // HEIC ou format non supporté → upload le fichier brut direct vers Catbox
+                URL.revokeObjectURL(blobUrl);
+                if (statusEl) statusEl.textContent = "⏳ Upload en cours...";
+                const ext = (file.name || "").split(".").pop().toLowerCase() || "jpg";
+                const cloudUrl = await uploadToCatboxDirect(file, `photo_${Date.now()}.${ext}`);
+                const targetInput = document.getElementById(targetUrlInputId);
+                if (cloudUrl) {
+                    if (targetInput) targetInput.value = cloudUrl;
+                    if (statusEl) statusEl.textContent = "✅ Photo uploadée !";
+                    showToast("Photo hébergée ! 🚀");
+                } else {
+                    if (statusEl) statusEl.textContent = "❌ Format non supporté — utilise JPEG/PNG";
+                    showToast("Format non supporté. Prends une capture d'écran.", "error");
+                }
             };
 
             img.src = blobUrl;
 
         } else {
-            // ── VIDÉO : lire le fichier et uploader vers Catbox ───────────
-            if (statusEl) statusEl.textContent = "⏳ Lecture de la vidéo...";
-            const reader = new FileReader();
-            reader.onload = async function (e) {
-                let dataUrl = String(e.target.result || "");
-                // Garder le MIME original (ne pas remapper quicktime → mp4)
-                // Catbox l'hébergera tel quel et retournera une vraie URL
-                if (statusEl) statusEl.textContent = "⏳ Upload vidéo en cours...";
-                const ext = (file.name || "").split(".").pop().toLowerCase() || "mp4";
-                const cloudUrl = await uploadFileToCloud(dataUrl, `video_${Date.now()}.${ext}`, statusEl);
-                const targetInput = document.getElementById(targetUrlInputId);
-                if (cloudUrl) {
-                    if (targetInput) targetInput.value = cloudUrl;
-                    if (statusEl) statusEl.textContent = "✅ Vidéo uploadée !";
-                    showToast("Vidéo hébergée en ligne ! 🎬");
-                } else {
-                    // Fallback : data URI avec MIME corrigé (peut ne pas marcher partout)
-                    if (targetInput) targetInput.value = cleanMediaUrl(dataUrl, "video");
-                    if (statusEl) statusEl.textContent = "⚠️ Upload échoué — vidéo stockée localement";
-                    showToast("Upload échoué. Utilise un lien URL à la place.", "error");
-                }
-            };
-            reader.onerror = function () {
-                if (statusEl) statusEl.textContent = "❌ Erreur de lecture";
-                showToast("Impossible de lire la vidéo", "error");
-            };
-            reader.readAsDataURL(file);
+            // ── VIDÉO : upload direct Catbox via FormData (pas de base64, pas de limite) ──
+            if (statusEl) statusEl.textContent = "⏳ Upload vidéo en cours...";
+            const ext = (file.name || "").split(".").pop().toLowerCase() || "mp4";
+            const cloudUrl = await uploadToCatboxDirect(file, `video_${Date.now()}.${ext}`);
+            const targetInput = document.getElementById(targetUrlInputId);
+            if (cloudUrl) {
+                if (targetInput) targetInput.value = cloudUrl;
+                if (statusEl) statusEl.textContent = "✅ Vidéo uploadée !";
+                showToast("Vidéo hébergée en ligne ! 🎬");
+            } else {
+                if (statusEl) statusEl.textContent = "❌ Upload échoué — colle un lien URL à la place";
+                showToast("Upload échoué. Colle un lien vidéo (ex: catbox.moe) dans le champ URL.", "error");
+            }
         }
     }
 
