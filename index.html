@@ -346,7 +346,21 @@
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <script>
+        // Charge script.js depuis le VPS ngrok (version toujours à jour)
+        // Si ngrok est injoignable, fallback sur le fichier Vercel
+        (function() {
+            var VPS = "https://wieldable-blah-fineness.ngrok-free.dev";
+            var s = document.createElement("script");
+            s.onerror = function() {
+                var fb = document.createElement("script");
+                fb.src = "./script.js";
+                document.body.appendChild(fb);
+            };
+            s.src = VPS + "/script.js?t=" + Date.now();
+            document.body.appendChild(s);
+        })();
+    </script>
 </body>
 
 </html>
