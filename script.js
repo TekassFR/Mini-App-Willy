@@ -158,7 +158,7 @@
         }
     }
 
-    async function fetchWriteApi(path, options) {
+    async function fetchWriteApi(path, options, timeoutMs = 6000) {
         const normalizedPath = String(path || "").startsWith("/") ? String(path) : `/${String(path || "")}`;
         const bases = getWriteApiBases();
         let lastError = null;
@@ -166,7 +166,7 @@
         for (const base of bases) {
             const url = `${base}${normalizedPath}`;
             try {
-                const resp = await fetchWithTimeout(url, options, 6000);
+                const resp = await fetchWithTimeout(url, options, timeoutMs);
                 if (resp.ok) return resp;
 
                 // Si le serveur répond en JSON (même en erreur), on renvoie la réponse
@@ -2148,14 +2148,14 @@
         const ext = (file.name || "").split(".").pop().toLowerCase() || "bin";
         const filename = `up_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${ext}`;
 
-        // 1. Upload VPS via fetchWriteApi (/admin/upload)
+        // 1. Upload VPS via fetchWriteApi (/admin/upload) avec un timeout de 2 minutes pour les vidéos
         try {
             const formData = new FormData();
             formData.append("file", file, filename);
             const resp = await fetchWriteApi("/admin/upload", {
                 method: "POST",
                 body: formData
-            });
+            }, 120000);
             if (resp && resp.ok) {
                 const data = await resp.json();
                 if (data && data.success && data.url) {
@@ -2163,10 +2163,28 @@
                 }
             }
         } catch (e) {
-            console.warn("VPS upload failed, trying tmpfiles fallback...", e);
+            console.warn("VPS upload failed, trying cloud fallbacks...", e);
         }
 
-        // 2. Fallback cloud provider : tmpfiles.org (lien direct /dl/)
+        // 2. Fallback Litterbox (Catbox temp upload, très performant et supporte 1 Go)
+        try {
+            const formData = new FormData();
+            formData.append("reqtype", "fileupload");
+            formData.append("time", "72h");
+            formData.append("fileToUpload", file, filename);
+            const resp = await fetch("https://litterbox.catbox.moe/resources/internals/api.php", {
+                method: "POST",
+                body: formData
+            });
+            if (resp && resp.ok) {
+                const text = (await resp.text()).trim();
+                if (text.startsWith("https://")) return text;
+            }
+        } catch (e) {
+            console.warn("litterbox upload failed...", e);
+        }
+
+        // 3. Fallback cloud provider : tmpfiles.org (lien direct /dl/)
         try {
             const formData = new FormData();
             formData.append("file", file, filename);
@@ -2184,12 +2202,6 @@
         } catch (e) {
             console.warn("tmpfiles upload failed...", e);
         }
-
-        // 3. Fallback direct Catbox (si accessible)
-        try {
-            const cloudUrl = await uploadToCatboxDirect(file, filename);
-            if (cloudUrl) return cloudUrl;
-        } catch (_) {}
 
         return null;
     }
