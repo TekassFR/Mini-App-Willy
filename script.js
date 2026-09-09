@@ -768,7 +768,7 @@
         const bases = getWriteApiBases();
         let cfg = null;
 
-        // Charger la configuration LIVE uniquement depuis le serveur VPS
+        // 1. Charger la configuration LIVE depuis le serveur VPS (ngrok)
         for (const base of bases) {
             if (!base) continue;
             try {
@@ -783,19 +783,35 @@
             } catch (_) {}
         }
 
-        // IMPORTANT: Si le VPS est injoignable, on garde state.config existant plutôt
-        // que de retomber sur le fichier statique Vercel qui est figé dans le temps.
+        // 2. Si VPS inaccessible: essayer la fonction serverless Vercel /api/config (requête Neon en direct)
+        if (!cfg) {
+            try {
+                const vercelOrigin = (window.location && /^https?:/i.test(String(window.location.origin || "")))
+                    ? String(window.location.origin).replace(/\/+$/, "")
+                    : "";
+                if (vercelOrigin) {
+                    const resp = await fetchWithTimeout(`${vercelOrigin}/api/config?t=${Date.now()}`, { cache: "no-store" }, 6000);
+                    if (resp.ok) {
+                        const data = await resp.json();
+                        if (data && typeof data === "object" && (data.products || data.categories || data.restaurant)) {
+                            cfg = data;
+                        }
+                    }
+                }
+            } catch (_) {}
+        }
+
+        // 3. Si toujours rien: garder le state actuel si déjà chargé (évite d'écraser avec données figées)
         if (!cfg) {
             if (state.config && typeof state.config === "object") {
-                // Garder le state actuel : ne rien écraser
                 return;
             }
-            // Premier chargement uniquement - fallback sur fichier statique
+            // Dernier recours absolu: config.json statique Vercel
             try {
                 const resp = await fetchWithTimeout(`./config.json?t=${Date.now()}`, { cache: "no-store" }, 3000);
                 if (resp.ok) cfg = await resp.json();
             } catch (_) {}
-            if (!cfg) throw new Error("Impossible de charger la configuration (VPS inaccessible)");
+            if (!cfg) throw new Error("Impossible de charger la configuration (VPS et API Vercel inaccessibles)");
         }
 
         state.config = cfg;
@@ -2002,11 +2018,9 @@
         if (!els.adminProductsContent) return;
         els.adminProductsContent.innerHTML = `<div class="admin-empty">Chargement...</div>`;
         try {
-            let cfg = state.config && typeof state.config === "object" ? state.config : null;
-            if (!cfg) {
-                await loadConfig();
-                cfg = state.config;
-            }
+            // Toujours recharger la config fraîche depuis le serveur
+            await loadConfig();
+            const cfg = state.config;
             if (!cfg) throw new Error("config indisponible");
             const categories = cfg.categories || {};
             const products = cfg.products || {};
@@ -2347,11 +2361,8 @@
         if (!els.adminCategoriesContent) return;
         els.adminCategoriesContent.innerHTML = `<div class="admin-empty">Chargement...</div>`;
         try {
-            let cfg = state.config && typeof state.config === "object" ? state.config : null;
-            if (!cfg) {
-                await loadConfig();
-                cfg = state.config;
-            }
+            await loadConfig();
+            const cfg = state.config;
             if (!cfg) throw new Error("config indisponible");
             const categories = cfg.categories || {};
             const products = cfg.products || {};
