@@ -2095,27 +2095,66 @@
         if (!file) return;
 
         const statusEl = document.getElementById(statusElId);
-        if (statusEl) statusEl.textContent = "⏳ Traitement du fichier...";
+        if (statusEl) statusEl.textContent = "⏳ Optimisation du fichier...";
 
-        if (file.size > 25 * 1024 * 1024) {
-            if (statusEl) statusEl.textContent = "❌ Fichier trop lourd (max 25 Mo)";
-            showToast("Le fichier dépasse 25 Mo", "error");
+        if (file.size > 50 * 1024 * 1024) {
+            if (statusEl) statusEl.textContent = "❌ Fichier trop lourd (max 50 Mo)";
+            showToast("Le fichier dépasse 50 Mo", "error");
             return;
         }
 
+        const isImage = file.type.startsWith("image/");
+        if (isImage) {
+            const img = new Image();
+            const url = URL.createObjectURL(file);
+            img.onload = function () {
+                const maxDim = 1200;
+                let w = img.width;
+                let h = img.height;
+                if (w > maxDim || h > maxDim) {
+                    if (w > h) {
+                        h = Math.round((h * maxDim) / w);
+                        w = maxDim;
+                    } else {
+                        w = Math.round((w * maxDim) / h);
+                        h = maxDim;
+                    }
+                }
+                const canvas = document.createElement("canvas");
+                canvas.width = w;
+                canvas.height = h;
+                const ctx = canvas.getContext("2d");
+                ctx.drawImage(img, 0, 0, w, h);
+                const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+                URL.revokeObjectURL(url);
+                const targetInput = document.getElementById(targetUrlInputId);
+                if (targetInput) targetInput.value = dataUrl;
+                if (statusEl) statusEl.textContent = "✅ Photo optimisée !";
+                showToast("Photo optimisée et chargée ! 🚀");
+            };
+            img.onerror = function () {
+                URL.revokeObjectURL(url);
+                readRawDataUrl(file, targetUrlInputId, statusEl);
+            };
+            img.src = url;
+        } else {
+            readRawDataUrl(file, targetUrlInputId, statusEl);
+        }
+    }
+
+    function readRawDataUrl(file, targetUrlInputId, statusEl) {
         const reader = new FileReader();
         reader.onload = function (e) {
             const dataUrl = e.target.result;
             const targetInput = document.getElementById(targetUrlInputId);
             if (targetInput) targetInput.value = dataUrl;
             if (statusEl) statusEl.textContent = "✅ Fichier prêt !";
-            showToast("Photo/Vidéo chargée avec succès ! 🚀");
+            showToast("Vidéo chargée avec succès ! 🚀");
         };
         reader.onerror = function () {
             if (statusEl) statusEl.textContent = "❌ Erreur de lecture";
             showToast("Impossible de lire le fichier", "error");
         };
-
         reader.readAsDataURL(file);
     }
 
