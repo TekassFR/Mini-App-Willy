@@ -892,7 +892,8 @@
     }
 
     function productCardTemplate(product) {
-        const img = sanitize(product.image || "");
+        const rawImg = cleanMediaUrl(product.image || "", "image");
+        const rawVideo = cleanMediaUrl(product.video || "", "video");
         const name = sanitize(product.name || "Product");
         const desc = sanitize(product.description || "");
         const categoryMeta = getCategoryMeta(product.category);
@@ -904,10 +905,19 @@
         if (product.isNew) badge = `<span class="badge new">${t("badgeNew")}</span>`;
         else if (product.isPromo) badge = `<span class="badge promo">${t("badgePromo")}</span>`;
 
+        let mediaHtml = "";
+        if (rawImg && !rawImg.startsWith("data:video/")) {
+            mediaHtml = `<img src="${sanitize(rawImg)}" alt="${name}" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.parentElement.innerHTML='<div style=\\'width:100%;height:100%;display:grid;place-items:center;background:rgba(255,255,255,0.05);font-size:2.2rem;\\'>📦</div>';">`;
+        } else if (rawVideo) {
+            mediaHtml = `<video src="${sanitize(rawVideo)}" muted playsinline preload="metadata" style="width:100%;height:100%;object-fit:cover;"></video>`;
+        } else {
+            mediaHtml = `<div style="width:100%;height:100%;display:grid;place-items:center;background:rgba(255,255,255,0.05);font-size:2.2rem;">📦</div>`;
+        }
+
         return `
             <article class="product-card" data-product-id="${product.id}">
                 <div class="product-media">
-                    <img src="${img}" alt="${name}" loading="lazy" referrerpolicy="no-referrer">
+                    ${mediaHtml}
                     <span class="status-dot" aria-hidden="true"></span>
                     ${badge}
                     <div class="product-media-tools" aria-hidden="true">🧊🚀⚡️</div>
@@ -1253,33 +1263,56 @@
         return `https://i.imgur.com/${id}.jpg`;
     }
 
+    function cleanMediaUrl(url, defaultType) {
+        if (!url) return "";
+        let s = String(url).trim();
+        if (!s) return "";
+
+        if (s.startsWith("data:application/octet-stream") || s.startsWith("data:;")) {
+            if (defaultType === "video") {
+                s = s.replace(/^data:(application\/octet-stream|);/, "data:video/mp4;");
+            } else {
+                s = s.replace(/^data:(application\/octet-stream|);/, "data:image/jpeg;");
+            }
+        } else if (s.startsWith("data:video/quicktime")) {
+            s = s.replace(/^data:video\/quicktime;/, "data:video/mp4;");
+        }
+
+        return s;
+    }
+
     function buildMediaSlides(product) {
         const slides = [];
         const gallery = Array.isArray(product.gallery) ? product.gallery : [];
+        const cleanImg = cleanMediaUrl(product.image || "", "image");
+        const cleanVid = cleanMediaUrl(product.video || "", "video");
 
         gallery.forEach((item) => {
             if (!item) return;
             if (typeof item === "string") {
-                slides.push({ type: "image", src: sanitize(item) });
+                const c = cleanMediaUrl(item, "image");
+                if (c) slides.push({ type: c.startsWith("data:video/") ? "video" : "image", src: sanitize(c) });
                 return;
             }
             const type = item.type === "video" ? "video" : "image";
-            const src = type === "video" ? getPlayableVideo(item.src || "") : sanitize(item.src || "");
+            const src = type === "video" ? getPlayableVideo(cleanMediaUrl(item.src || "", "video")) : sanitize(cleanMediaUrl(item.src || "", "image"));
             if (!src) return;
             if (type === "video") {
-                const fallbackThumb = sanitize(product.image || "");
-                const thumb = sanitize(item.thumb || item.poster || getVideoPreviewImage(src) || fallbackThumb);
+                const fallbackThumb = sanitize(cleanImg);
+                const thumb = sanitize(cleanMediaUrl(item.thumb || item.poster || getVideoPreviewImage(src) || fallbackThumb, "image"));
                 slides.push({ type, src, thumb, fallbackThumb });
                 return;
             }
             slides.push({ type, src });
         });
 
-        if (product.image) slides.unshift({ type: "image", src: sanitize(product.image) });
-        const videoUrl = getPlayableVideo(product.video);
+        if (cleanImg && !cleanImg.startsWith("data:video/")) {
+            slides.unshift({ type: "image", src: sanitize(cleanImg) });
+        }
+        const videoUrl = getPlayableVideo(cleanVid);
         if (videoUrl) {
-            const fallbackThumb = sanitize(product.image || "");
-            const thumb = sanitize(getVideoPreviewImage(videoUrl) || fallbackThumb);
+            const fallbackThumb = sanitize(cleanImg);
+            const thumb = sanitize(cleanMediaUrl(getVideoPreviewImage(videoUrl) || fallbackThumb, "image"));
             slides.push({ type: "video", src: videoUrl, thumb, fallbackThumb });
         }
 
@@ -1310,11 +1343,16 @@
         els.detailThumbs.innerHTML = detailSlides
             .map((slide, idx) => {
                 const marker = slide.type === "video" ? "▶" : "";
-                const thumbMedia = slide.type === "video"
-                    ? (slide.thumb
-                        ? `<img src="${slide.thumb}" alt="Miniature video ${idx + 1}" loading="lazy" referrerpolicy="no-referrer" data-fallback="${slide.fallbackThumb || ""}">`
-                        : `<video src="${slide.src}" muted playsinline preload="metadata"></video>`)
-                    : `<img src="${slide.src}" alt="Miniature ${idx + 1}" loading="lazy" referrerpolicy="no-referrer">`;
+                let thumbMedia = "";
+                if (slide.type === "video") {
+                    if (slide.thumb && !slide.thumb.startsWith("data:video/")) {
+                        thumbMedia = `<img src="${slide.thumb}" alt="Miniature video ${idx + 1}" loading="lazy" referrerpolicy="no-referrer" data-fallback="${slide.fallbackThumb || ""}" onerror="this.style.display='none';">`;
+                    } else {
+                        thumbMedia = `<video src="${slide.src}" muted playsinline preload="metadata"></video>`;
+                    }
+                } else {
+                    thumbMedia = `<img src="${slide.src}" alt="Miniature ${idx + 1}" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display='none';">`;
+                }
                 return `<button class="detail-thumb ${idx === 0 ? "active" : ""}" data-slide-index="${idx}" type="button">${thumbMedia}<span>${marker}</span></button>`;
             })
             .join("");
@@ -2103,8 +2141,11 @@
             return;
         }
 
-        const isImage = file.type.startsWith("image/");
-        if (isImage) {
+        const isVideoTarget = targetUrlInputId === "apf-video";
+        const isImageTarget = targetUrlInputId === "apf-img";
+        const isImageFile = file.type && file.type.startsWith("image/");
+
+        if (isImageTarget || (isImageFile && !isVideoTarget)) {
             const img = new Image();
             const url = URL.createObjectURL(file);
             img.onload = function () {
@@ -2128,28 +2169,29 @@
                 const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
                 URL.revokeObjectURL(url);
                 const targetInput = document.getElementById(targetUrlInputId);
-                if (targetInput) targetInput.value = dataUrl;
+                if (targetInput) targetInput.value = cleanMediaUrl(dataUrl, "image");
                 if (statusEl) statusEl.textContent = "✅ Photo optimisée !";
                 showToast("Photo optimisée et chargée ! 🚀");
             };
             img.onerror = function () {
                 URL.revokeObjectURL(url);
-                readRawDataUrl(file, targetUrlInputId, statusEl);
+                readRawDataUrl(file, targetUrlInputId, statusEl, "image");
             };
             img.src = url;
         } else {
-            readRawDataUrl(file, targetUrlInputId, statusEl);
+            readRawDataUrl(file, targetUrlInputId, statusEl, "video");
         }
     }
 
-    function readRawDataUrl(file, targetUrlInputId, statusEl) {
+    function readRawDataUrl(file, targetUrlInputId, statusEl, defaultType = "video") {
         const reader = new FileReader();
         reader.onload = function (e) {
-            const dataUrl = e.target.result;
+            let dataUrl = e.target.result || "";
+            dataUrl = cleanMediaUrl(dataUrl, defaultType);
             const targetInput = document.getElementById(targetUrlInputId);
             if (targetInput) targetInput.value = dataUrl;
             if (statusEl) statusEl.textContent = "✅ Fichier prêt !";
-            showToast("Vidéo chargée avec succès ! 🚀");
+            showToast(defaultType === "video" ? "Vidéo chargée avec succès ! 🚀" : "Photo chargée avec succès ! 🚀");
         };
         reader.onerror = function () {
             if (statusEl) statusEl.textContent = "❌ Erreur de lecture";
