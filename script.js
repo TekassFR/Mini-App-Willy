@@ -2090,6 +2090,44 @@
         }
     }
 
+    async function handleAdminFileUpload(fileInputEl, targetUrlInputId, statusElId) {
+        const file = fileInputEl.files && fileInputEl.files[0];
+        if (!file) return;
+        const statusEl = document.getElementById(statusElId);
+        if (statusEl) statusEl.textContent = "⏳ Envoi en cours...";
+
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("tg_username", getAdminUsername());
+
+        try {
+            const resp = await fetchWriteApi("/admin/upload", {
+                method: "POST",
+                body: formData
+            });
+            const data = await readJsonIfAny(resp);
+            if (resp.ok && data && data.url) {
+                let fullUrl = data.url;
+                if (fullUrl.startsWith("/")) {
+                    const bases = getWriteApiBases();
+                    const base = bases.find(b => b.startsWith("http")) || "";
+                    fullUrl = `${base}${fullUrl}`;
+                }
+                const targetInput = document.getElementById(targetUrlInputId);
+                if (targetInput) targetInput.value = fullUrl;
+                if (statusEl) statusEl.textContent = "✅ Fichier prêt !";
+                showToast("Fichier téléversé avec succès ! 🚀");
+            } else {
+                const err = (data && data.error) || `Erreur HTTP ${resp.status}`;
+                if (statusEl) statusEl.textContent = `❌ ${err}`;
+                showToast(err, "error");
+            }
+        } catch (_) {
+            if (statusEl) statusEl.textContent = "❌ Échec de l'envoi.";
+            showToast("Impossible d'envoyer le fichier au VPS", "error");
+        }
+    }
+
     function showAdminProductForm(product, cfg) {
         const categories = cfg.categories || {};
         const isEdit = !!product;
@@ -2107,8 +2145,27 @@
                     <label class="admin-label">Catégorie *<select class="admin-input" id="apf-cat">${catOptions}</select></label>
                     <label class="admin-label">Prix de base (€) *<input class="admin-input" id="apf-price" type="number" step="0.01" min="0" value="${product ? (product.price || 0) : ""}" required></label>
                     <label class="admin-label">Prix personnalisés (JSON)<span class="admin-hint">Ex: {"1.5": 20, "3.5": 50, "10": 110}</span><textarea class="admin-input admin-textarea" id="apf-custom" rows="4">${customPricesStr}</textarea></label>
-                    <label class="admin-label">Image (URL)<input class="admin-input" id="apf-img" type="text" value="${sanitize(product ? (product.image || "") : "")}"></label>
-                    <label class="admin-label">Vidéo (URL, optionnel)<input class="admin-input" id="apf-video" type="text" value="${sanitize(product ? (product.video || "") : "")}"></label>
+                    
+                    <div style="margin-bottom:12px;">
+                        <label class="admin-label">Image (Lien URL ou Fichier appareil)</label>
+                        <input class="admin-input" id="apf-img" type="text" placeholder="https://..." value="${sanitize(product ? (product.image || "") : "")}">
+                        <div class="admin-upload-box">
+                            <label class="admin-upload-btn" for="apf-img-file">📷 Choisir une photo depuis l'appareil</label>
+                            <input type="file" id="apf-img-file" accept="image/*" style="display:none;">
+                            <span class="admin-upload-status" id="apf-img-status"></span>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom:12px;">
+                        <label class="admin-label">Vidéo (Lien URL ou Fichier appareil, optionnel)</label>
+                        <input class="admin-input" id="apf-video" type="text" placeholder="https://..." value="${sanitize(product ? (product.video || "") : "")}">
+                        <div class="admin-upload-box">
+                            <label class="admin-upload-btn" for="apf-video-file">📹 Choisir une vidéo depuis l'appareil</label>
+                            <input type="file" id="apf-video-file" accept="video/*" style="display:none;">
+                            <span class="admin-upload-status" id="apf-video-status"></span>
+                        </div>
+                    </div>
+
                     <label class="admin-label">Emoji<input class="admin-input" id="apf-emoji" type="text" maxlength="8" value="${sanitize(product ? (product.emoji || "📦") : "📦")}"></label>
                     <div class="admin-check-row">
                         <label class="admin-check-label"><input type="checkbox" id="apf-new" ${product && product.isNew ? "checked" : ""}> Nouveau</label>
@@ -2120,6 +2177,21 @@
             </div>`;
         if (els.adminProductsContent) els.adminProductsContent.innerHTML = formHtml;
         document.getElementById("admin-product-form-back").addEventListener("click", loadAdminProducts);
+
+        const imgFileInput = document.getElementById("apf-img-file");
+        if (imgFileInput) {
+            imgFileInput.addEventListener("change", function () {
+                handleAdminFileUpload(this, "apf-img", "apf-img-status");
+            });
+        }
+
+        const videoFileInput = document.getElementById("apf-video-file");
+        if (videoFileInput) {
+            videoFileInput.addEventListener("change", function () {
+                handleAdminFileUpload(this, "apf-video", "apf-video-status");
+            });
+        }
+
         document.getElementById("admin-product-form").addEventListener("submit", async (e) => {
             e.preventDefault();
             const nameVal = document.getElementById("apf-name").value.trim();
