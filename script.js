@@ -2275,13 +2275,43 @@
         showToast("Upload échoué. Colle un lien vidéo/image direct dans le champ URL.", "error");
     }
 
+    function parseCustomPricesInput(rawStr) {
+        if (!rawStr || !rawStr.trim()) return {};
+        const text = rawStr.trim();
+        // 1. Si format JSON valide fourni par l'utilisateur
+        if (text.startsWith("{")) {
+            try { return JSON.parse(text); } catch (_) {}
+        }
+        // 2. Format simplifié ultra intuitif : "10: 80", "10 = 80", "10:80, 20:150"
+        const result = {};
+        const lines = text.split(/[\n,;]+/);
+        for (const line of lines) {
+            const parts = line.split(/[:=]+/).map(s => s.trim());
+            if (parts.length === 2 && parts[0] && parts[1]) {
+                const key = parts[0];
+                const val = parseFloat(parts[1]);
+                if (!isNaN(val)) {
+                    result[key] = val;
+                }
+            }
+        }
+        return result;
+    }
+
+    function formatCustomPricesForEdit(cpObj) {
+        if (!cpObj || typeof cpObj !== "object") return "";
+        const entries = Object.entries(cpObj);
+        if (!entries.length) return "";
+        return entries.map(([qty, price]) => `${qty}: ${price}`).join("\n");
+    }
+
     function showAdminProductForm(product, cfg) {
         const categories = cfg.categories || {};
         const isEdit = !!product;
         const catOptions = Object.entries(categories).map(([key, cat]) =>
             `<option value="${sanitize(key)}" ${product && product.category === key ? "selected" : ""}>${sanitize(cat.emoji || "")} ${sanitize(cat.name)}</option>`
         ).join("");
-        const customPricesStr = product && product.customPrices ? JSON.stringify(product.customPrices, null, 2) : "";
+        const customPricesStr = product && product.customPrices ? formatCustomPricesForEdit(product.customPrices) : "";
         const formHtml = `
             <div class="admin-form-wrap">
                 <button class="admin-form-back-btn" id="admin-product-form-back" type="button">← Retour</button>
@@ -2291,7 +2321,7 @@
                     <label class="admin-label">Description<textarea class="admin-input admin-textarea" id="apf-desc" maxlength="500">${sanitize(product ? (product.description || "") : "")}</textarea></label>
                     <label class="admin-label">Catégorie *<select class="admin-input" id="apf-cat">${catOptions}</select></label>
                     <label class="admin-label">Prix de base (€) *<input class="admin-input" id="apf-price" type="number" step="0.01" min="0" value="${product ? (product.price || 0) : ""}" required></label>
-                    <label class="admin-label">Prix personnalisés (JSON)<span class="admin-hint">Ex: {"1.5": 20, "3.5": 50, "10": 110}</span><textarea class="admin-input admin-textarea" id="apf-custom" rows="4">${customPricesStr}</textarea></label>
+                    <label class="admin-label">Prix par quantité<span class="admin-hint">Ex: 10: 80 (Quantité: Prix, une par ligne)</span><textarea class="admin-input admin-textarea" id="apf-custom" rows="4" placeholder="10: 80&#10;20: 150&#10;50: 350">${customPricesStr}</textarea></label>
                     
                     <div style="margin-bottom:12px;">
                         <label class="admin-label">Image (Lien URL ou Fichier appareil)</label>
@@ -2345,9 +2375,8 @@
             const catVal = document.getElementById("apf-cat").value;
             const priceVal = parseFloat(document.getElementById("apf-price").value) || 0;
             if (!nameVal || !catVal) return;
-            let customPrices = {};
             const cpRaw = document.getElementById("apf-custom").value.trim();
-            if (cpRaw) { try { customPrices = JSON.parse(cpRaw); } catch (_) { showToast("Prix personnalisés: JSON invalide", "error"); return; } }
+            const customPrices = parseCustomPricesInput(cpRaw);
             const productData = {
                 name: nameVal,
                 description: document.getElementById("apf-desc").value.trim(),
