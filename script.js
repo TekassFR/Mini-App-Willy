@@ -1284,15 +1284,17 @@
         let s = String(url).trim();
         if (!s) return "";
 
+        // application/octet-stream sans MIME → on devine selon le contexte
         if (s.startsWith("data:application/octet-stream") || s.startsWith("data:;")) {
             if (defaultType === "video") {
                 s = s.replace(/^data:(application\/octet-stream|);/, "data:video/mp4;");
             } else {
                 s = s.replace(/^data:(application\/octet-stream|);/, "data:image/jpeg;");
             }
-        } else if (s.startsWith("data:video/quicktime")) {
-            s = s.replace(/^data:video\/quicktime;/, "data:video/mp4;");
         }
+        // NE PAS remapper video/quicktime → video/mp4 : les données sont QuickTime,
+        // changer le MIME ne transcode pas le contenu et casse la lecture sur Chrome.
+        // iOS Safari lit nativement video/quicktime.
 
         return s;
     }
@@ -2142,13 +2144,39 @@
         }
     }
 
+    // Upload via API Vercel → Catbox.moe (retourne une vraie URL publique)
+    async function uploadFileToCloud(dataUri, filename, statusEl) {
+        const vercelOrigin = (window.location && /^https?:/i.test(String(window.location.origin || "")))
+            ? String(window.location.origin).replace(/\/+$/, "")
+            : "";
+
+        // Essayer VPS d'abord, puis Vercel
+        const uploadBases = [].concat(getWriteApiBases(), vercelOrigin ? [vercelOrigin] : []).filter(Boolean);
+
+        for (const base of uploadBases) {
+            try {
+                const resp = await fetchWithTimeout(`${base}/admin/upload`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ data: dataUri, filename, tg_username: getAdminUsername() })
+                }, 30000);
+                if (resp.ok) {
+                    const data = await resp.json();
+                    if (data && data.success && data.url) return data.url;
+                }
+            } catch (_) {}
+        }
+        return null; // fallback: garder le data URI
+    }
+
     function handleAdminFileUpload(fileInputEl, targetUrlInputId, statusElId) {
         const file = fileInputEl.files && fileInputEl.files[0];
         if (!file) return;
 
         const statusEl = document.getElementById(statusElId);
-        if (statusEl) statusEl.textContent = "⏳ Optimisation du fichier...";
+        if (statusEl) statusEl.textContent = "⏳ Chargement du fichier...";
 
+        // Limite 50 Mo
         if (file.size > 50 * 1024 * 1024) {
             if (statusEl) statusEl.textContent = "❌ Fichier trop lourd (max 50 Mo)";
             showToast("Le fichier dépasse 50 Mo", "error");
@@ -2158,60 +2186,99 @@
         const isVideoTarget = targetUrlInputId === "apf-video";
         const isImageTarget = targetUrlInputId === "apf-img";
         const isImageFile = file.type && file.type.startsWith("image/");
+        const isVideoFile = file.type && file.type.startsWith("video/");
 
         if (isImageTarget || (isImageFile && !isVideoTarget)) {
+            // ── IMAGE : compression Canvas → JPEG → upload Catbox ──────────
             const img = new Image();
-            const url = URL.createObjectURL(file);
-            img.onload = function () {
+            const blobUrl = URL.createObjectURL(file);
+
+            img.onload = async function () {
                 const maxDim = 1200;
-                let w = img.width;
-                let h = img.height;
+                let w = img.width, h = img.height;
                 if (w > maxDim || h > maxDim) {
-                    if (w > h) {
-                        h = Math.round((h * maxDim) / w);
-                        w = maxDim;
-                    } else {
-                        w = Math.round((w * maxDim) / h);
-                        h = maxDim;
-                    }
+                    if (w > h) { h = Math.round((h * maxDim) / w); w = maxDim; }
+                    else { w = Math.round((w * maxDim) / h); h = maxDim; }
                 }
                 const canvas = document.createElement("canvas");
-                canvas.width = w;
-                canvas.height = h;
-                const ctx = canvas.getContext("2d");
-                ctx.drawImage(img, 0, 0, w, h);
-                const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
-                URL.revokeObjectURL(url);
-                const targetInput = document.getElementById(targetUrlInputId);
-                if (targetInput) targetInput.value = cleanMediaUrl(dataUrl, "image");
-                if (statusEl) statusEl.textContent = "✅ Photo optimisée !";
-                showToast("Photo optimisée et chargée ! 🚀");
-            };
-            img.onerror = function () {
-                URL.revokeObjectURL(url);
-                readRawDataUrl(file, targetUrlInputId, statusEl, "image");
-            };
-            img.src = url;
-        } else {
-            readRawDataUrl(file, targetUrlInputId, statusEl, "video");
-        }
-    }
+                canvas.width = w; canvas.height = h;
+                canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+                URL.revokeObjectURL(blobUrl);
 
-    function readRawDataUrl(file, targetUrlInputId, statusEl, defaultType = "video") {
-        const reader = new FileReader();
-        reader.onload = function (e) {
-            let dataUrl = e.target.result || "";
-            dataUrl = cleanMediaUrl(dataUrl, defaultType);
-            const targetInput = document.getElementById(targetUrlInputId);
-            if (targetInput) targetInput.value = dataUrl;
-            if (statusEl) statusEl.textContent = "✅ Fichier prêt !";
-            showToast(defaultType === "video" ? "Vidéo chargée avec succès ! 🚀" : "Photo chargée avec succès ! 🚀");
-        };
-        reader.onerror = function () {
-            if (statusEl) statusEl.textContent = "❌ Erreur de lecture";
-            showToast("Impossible de lire le fichier", "error");
-        };
-        reader.readAsDataURL(file);
+                const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+                if (statusEl) statusEl.textContent = "⏳ Upload en cours...";
+
+                const cloudUrl = await uploadFileToCloud(dataUrl, `photo_${Date.now()}.jpg`, statusEl);
+                const targetInput = document.getElementById(targetUrlInputId);
+                if (cloudUrl) {
+                    if (targetInput) targetInput.value = cloudUrl;
+                    if (statusEl) statusEl.textContent = "✅ Photo uploadée !";
+                    showToast("Photo hébergée en ligne ! 🚀");
+                } else {
+                    // Fallback : stocker le data URI localement
+                    if (targetInput) targetInput.value = dataUrl;
+                    if (statusEl) statusEl.textContent = "✅ Photo prête (locale)";
+                    showToast("Photo prête ! (hébergement indisponible)");
+                }
+            };
+
+            img.onerror = function () {
+                // HEIC ou format non supporté par le canvas → lire le raw et tenter l'upload
+                URL.revokeObjectURL(blobUrl);
+                if (statusEl) statusEl.textContent = "⏳ Conversion en cours...";
+                const reader = new FileReader();
+                reader.onload = async function (e) {
+                    const dataUrl = String(e.target.result || "");
+                    // Essayer d'uploader le fichier brut (catbox peut gérer HEIC)
+                    const cloudUrl = await uploadFileToCloud(dataUrl, `photo_${Date.now()}.jpg`, statusEl);
+                    const targetInput = document.getElementById(targetUrlInputId);
+                    if (cloudUrl) {
+                        if (targetInput) targetInput.value = cloudUrl;
+                        if (statusEl) statusEl.textContent = "✅ Photo uploadée !";
+                        showToast("Photo hébergée ! 🚀");
+                    } else {
+                        if (statusEl) statusEl.textContent = "❌ Format non supporté — utilise JPEG/PNG";
+                        showToast("Format non supporté. Prends une capture d'écran.", "error");
+                    }
+                };
+                reader.onerror = function () {
+                    if (statusEl) statusEl.textContent = "❌ Erreur de lecture";
+                    showToast("Impossible de lire le fichier", "error");
+                };
+                reader.readAsDataURL(file);
+            };
+
+            img.src = blobUrl;
+
+        } else {
+            // ── VIDÉO : lire le fichier et uploader vers Catbox ───────────
+            if (statusEl) statusEl.textContent = "⏳ Lecture de la vidéo...";
+            const reader = new FileReader();
+            reader.onload = async function (e) {
+                let dataUrl = String(e.target.result || "");
+                // Garder le MIME original (ne pas remapper quicktime → mp4)
+                // Catbox l'hébergera tel quel et retournera une vraie URL
+                if (statusEl) statusEl.textContent = "⏳ Upload vidéo en cours...";
+                const ext = (file.name || "").split(".").pop().toLowerCase() || "mp4";
+                const cloudUrl = await uploadFileToCloud(dataUrl, `video_${Date.now()}.${ext}`, statusEl);
+                const targetInput = document.getElementById(targetUrlInputId);
+                if (cloudUrl) {
+                    if (targetInput) targetInput.value = cloudUrl;
+                    if (statusEl) statusEl.textContent = "✅ Vidéo uploadée !";
+                    showToast("Vidéo hébergée en ligne ! 🎬");
+                } else {
+                    // Fallback : data URI avec MIME corrigé (peut ne pas marcher partout)
+                    if (targetInput) targetInput.value = cleanMediaUrl(dataUrl, "video");
+                    if (statusEl) statusEl.textContent = "⚠️ Upload échoué — vidéo stockée localement";
+                    showToast("Upload échoué. Utilise un lien URL à la place.", "error");
+                }
+            };
+            reader.onerror = function () {
+                if (statusEl) statusEl.textContent = "❌ Erreur de lecture";
+                showToast("Impossible de lire la vidéo", "error");
+            };
+            reader.readAsDataURL(file);
+        }
     }
 
     function showAdminProductForm(product, cfg) {
