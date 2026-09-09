@@ -1,0 +1,9 @@
+{
+  "rewrites": [
+    { "source": "/config", "destination": "/api/config" },
+    { "source": "/reviews", "destination": "/api/proxy" },
+    { "source": "/save-review", "destination": "/api/proxy" },
+    { "source": "/save-order", "destination": "/api/proxy" },
+    { "source": "/admin/:path*", "destination": "/api/proxy" }
+  ]
+}
