@@ -2719,6 +2719,10 @@
         setTimeout(() => {
             if (els.introSub) els.introSub.textContent = "Ouverture du menu...";
         }, 850);
+        setTimeout(() => {
+            document.body.classList.add("app-ready");
+        }, 1200);
+
         // Auto refresh silencieux quand l'utilisateur réouvre ou revient sur l'application Telegram
         document.addEventListener("visibilitychange", async () => {
             if (document.visibilityState === "visible") {
