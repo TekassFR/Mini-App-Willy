@@ -2719,9 +2719,35 @@
         setTimeout(() => {
             if (els.introSub) els.introSub.textContent = "Ouverture du menu...";
         }, 850);
-        setTimeout(() => {
-            document.body.classList.add("app-ready");
-        }, 1200);
+        // Auto refresh silencieux quand l'utilisateur réouvre ou revient sur l'application Telegram
+        document.addEventListener("visibilitychange", async () => {
+            if (document.visibilityState === "visible") {
+                try {
+                    await loadConfig();
+                    renderCategories();
+                    renderProducts();
+                } catch (_) {}
+            }
+        });
+
+        window.addEventListener("focus", async () => {
+            try {
+                await loadConfig();
+                renderCategories();
+                renderProducts();
+            } catch (_) {}
+        });
+
+        // Synchronisation périodique automatique (toutes les 45 secondes)
+        setInterval(async () => {
+            if (document.visibilityState === "visible") {
+                try {
+                    await loadConfig();
+                    renderCategories();
+                    renderProducts();
+                } catch (_) {}
+            }
+        }, 45000);
     }
 
     document.addEventListener("DOMContentLoaded", bootstrap);
