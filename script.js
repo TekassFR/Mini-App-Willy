@@ -2160,11 +2160,44 @@
         }
     }
 
+    async function uploadToFreeimageHost(file) {
+        try {
+            const reader = new FileReader();
+            const b64 = await new Promise((resolve, reject) => {
+                reader.onload = () => {
+                    const res = String(reader.result || "");
+                    const comma = res.indexOf(",");
+                    resolve(comma >= 0 ? res.slice(comma + 1) : res);
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+            const formData = new FormData();
+            formData.append("action", "upload");
+            formData.append("source", b64);
+            formData.append("format", "json");
+            const resp = await fetch("https://freeimage.host/api/1/upload?key=6d207e02198a847aa98d0a2a901485a5", {
+                method: "POST",
+                body: formData
+            });
+            if (resp && resp.ok) {
+                const json = await resp.json();
+                if (json && json.image && json.image.url) {
+                    return String(json.image.url);
+                }
+            }
+        } catch (e) {
+            console.warn("freeimage upload failed:", e);
+        }
+        return null;
+    }
+
     async function uploadMediaFile(file) {
         const ext = (file.name || "").split(".").pop().toLowerCase() || "bin";
         const filename = `up_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${ext}`;
+        const isImage = file.type && file.type.startsWith("image/");
 
-        // 1. Upload VPS via fetchWriteApi (/admin/upload) avec un timeout de 2 minutes pour les vidéos
+        // 1. Upload VPS via fetchWriteApi (/admin/upload)
         try {
             const formData = new FormData();
             formData.append("file", file, filename);
@@ -2182,42 +2215,19 @@
             console.warn("VPS upload failed, trying cloud fallbacks...", e);
         }
 
-        // 2. Fallback Litterbox (Catbox temp upload, très performant et supporte 1 Go)
-        try {
-            const formData = new FormData();
-            formData.append("reqtype", "fileupload");
-            formData.append("time", "72h");
-            formData.append("fileToUpload", file, filename);
-            const resp = await fetch("https://litterbox.catbox.moe/resources/internals/api.php", {
-                method: "POST",
-                body: formData
-            });
-            if (resp && resp.ok) {
-                const text = (await resp.text()).trim();
-                if (text.startsWith("https://")) return text;
-            }
-        } catch (e) {
-            console.warn("litterbox upload failed...", e);
+        // 2. Si c'est une image : hébergeur direct CDN (FreeImage iili.io)
+        if (isImage) {
+            try {
+                const freeimgUrl = await uploadToFreeimageHost(file);
+                if (freeimgUrl) return freeimgUrl;
+            } catch (_) {}
         }
 
-        // 3. Fallback cloud provider : tmpfiles.org (lien direct /dl/)
+        // 3. Fallback direct Catbox (si accessible)
         try {
-            const formData = new FormData();
-            formData.append("file", file, filename);
-            const resp = await fetch("https://tmpfiles.org/api/v1/upload", {
-                method: "POST",
-                body: formData
-            });
-            if (resp && resp.ok) {
-                const json = await resp.json();
-                if (json && json.status === "success" && json.data && json.data.url) {
-                    const rawUrl = String(json.data.url);
-                    return rawUrl.replace("https://tmpfiles.org/", "https://tmpfiles.org/dl/");
-                }
-            }
-        } catch (e) {
-            console.warn("tmpfiles upload failed...", e);
-        }
+            const cloudUrl = await uploadToCatboxDirect(file, filename);
+            if (cloudUrl) return cloudUrl;
+        } catch (_) {}
 
         return null;
     }
