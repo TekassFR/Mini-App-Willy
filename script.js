@@ -87,7 +87,7 @@
     };
 
     // URL du bot VPS par défaut pour les API d'écriture (save, delete, reorder, settings, etc.)
-    const LOCAL_API_BASE = "https://wieldable-blah-fineness.ngrok-free.dev";
+    const LOCAL_API_BASE = "http://185.185.83.209:4001";
 
     function normalizeApiBase(base) {
         let raw = String(base || "").trim();
@@ -113,10 +113,8 @@
     }
 
     function getWriteApiBases() {
-        const isHttps = window.location && window.location.protocol === "https:";
         const filterHttpIfHttps = (base) => {
             if (!base) return "";
-            if (isHttps && String(base).toLowerCase().startsWith("http://")) return "";
             return base;
         };
 
@@ -2162,21 +2160,12 @@
 
     async function uploadToFreeimageHost(file) {
         try {
-            const reader = new FileReader();
-            const b64 = await new Promise((resolve, reject) => {
-                reader.onload = () => {
-                    const res = String(reader.result || "");
-                    const comma = res.indexOf(",");
-                    resolve(comma >= 0 ? res.slice(comma + 1) : res);
-                };
-                reader.onerror = reject;
-                reader.readAsDataURL(file);
-            });
             const formData = new FormData();
             formData.append("action", "upload");
-            formData.append("source", b64);
+            formData.append("source", file, file.name || "image.png");
+            formData.append("key", "6d207e02198a847aa98d0a2a901485a5");
             formData.append("format", "json");
-            const resp = await fetch("https://freeimage.host/api/1/upload?key=6d207e02198a847aa98d0a2a901485a5", {
+            const resp = await fetch("https://freeimage.host/api/1/upload", {
                 method: "POST",
                 body: formData
             });
@@ -2190,6 +2179,24 @@
             console.warn("freeimage upload failed:", e);
         }
         return null;
+    }
+
+    async function uploadToLitterbox(file, filename) {
+        try {
+            const formData = new FormData();
+            formData.append("reqtype", "fileupload");
+            formData.append("time", "72h");
+            formData.append("fileToUpload", file, filename);
+            const resp = await fetch("https://litterbox.catbox.moe/resources/internals/api.php", {
+                method: "POST",
+                body: formData
+            });
+            if (!resp || !resp.ok) return null;
+            const text = (await resp.text()).trim();
+            return text.startsWith("https://") ? text : null;
+        } catch (_) {
+            return null;
+        }
     }
 
     async function uploadMediaFile(file) {
@@ -2223,33 +2230,13 @@
             } catch (_) {}
         }
 
-        // 3. Fallback direct Catbox (si accessible)
+        // 3. Fallback Litterbox (pour vidéos et photos - lien HTTPS direct)
         try {
-            const cloudUrl = await uploadToCatboxDirect(file, filename);
+            const cloudUrl = await uploadToLitterbox(file, filename);
             if (cloudUrl) return cloudUrl;
         } catch (_) {}
 
         return null;
-    }
-
-    // Upload DIRECT vers Catbox.moe
-    async function uploadToCatboxDirect(fileOrBlob, filename) {
-        const formData = new FormData();
-        formData.append("reqtype", "fileupload");
-        formData.append("userhash", "");
-        formData.append("fileToUpload", fileOrBlob, filename);
-
-        try {
-            const resp = await fetch("https://catbox.moe/user/api.php", {
-                method: "POST",
-                body: formData
-            });
-            if (!resp.ok) return null;
-            const text = (await resp.text()).trim();
-            return text.startsWith("https://") ? text : null;
-        } catch (_) {
-            return null;
-        }
     }
 
     async function handleAdminFileUpload(fileInputEl, targetUrlInputId, statusElId) {
@@ -2283,22 +2270,20 @@
             return;
         }
 
-        // Fallback local pour les images (base64) si aucun service cloud/VPS n'est joignable
-        if (isImageTarget || isImageFile) {
-            try {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    if (targetInput) targetInput.value = e.target.result;
-                    if (statusEl) statusEl.textContent = "✅ Photo prête (locale)";
-                    showToast("Photo chargée localement !");
-                };
-                reader.readAsDataURL(file);
-                return;
-            } catch (_) {}
-        }
+        // Fallback local (base64 data URL) pour photos ET vidéos si tous les cloud/VPS sont indisponibles
+        try {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                if (targetInput) targetInput.value = e.target.result;
+                if (statusEl) statusEl.textContent = isVideo ? "✅ Vidéo prête (locale)" : "✅ Photo prête (locale)";
+                showToast(isVideo ? "Vidéo chargée localement ! 🎬" : "Photo chargée localement ! 🚀");
+            };
+            reader.readAsDataURL(file);
+            return;
+        } catch (_) {}
 
-        if (statusEl) statusEl.textContent = "❌ Upload échoué — colle un lien URL à la place";
-        showToast("Upload échoué. Colle un lien vidéo/image direct dans le champ URL.", "error");
+        if (statusEl) statusEl.textContent = "❌ Upload impossible — colle un lien URL à la place";
+        showToast("Upload impossible. Colle un lien direct dans le champ URL.", "error");
     }
 
     function parseCustomPricesInput(rawStr) {
